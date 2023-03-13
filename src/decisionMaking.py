@@ -1,6 +1,7 @@
 import math
-import gym
-from gym import spaces
+import gymnasium as gym
+# import gym
+from gymnasium import spaces
 import numpy as np
 
 class Vehicle:

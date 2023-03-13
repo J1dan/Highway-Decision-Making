@@ -1,6 +1,5 @@
 import math
 import gymnasium as gym
-# import gym
 from gymnasium import spaces
 import numpy as np
 
@@ -26,9 +25,9 @@ class Vehicle:
             self.speed += self.acceleration * 0.1
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
         if action == 'changeLaneR':
-            self.lane = max(self.lane - 1, 1)
+            self.lane = self.lane - 1
         if action == 'changeLaneL':
-            self.lane = min(self.lane + 1, 4)
+            self.lane = self.lane + 1
 
 class HighwayEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -120,13 +119,19 @@ class HighwayEnv(gym.Env):
 
             obstacle.position += obstacle.speed * self.t
 
-        # Check for collisions between the ego car and obstacles
         done = False
-        for obstacle in self.obstacles:
-            if obstacle.lane == self.ego.lane and abs(obstacle.position - self.ego.position) < self.car_length/2:
-                done = True
-                reward = -5
-                break
+        # Check for collisions between the ego and the boundary
+        if self.ego.lane < 0 or self.ego.lane > 3:
+            reward = -5
+            done = True 
+
+        # Check for collisions between the ego car and obstacles
+        if not done:
+            for obstacle in self.obstacles:
+                if obstacle.lane == self.ego.lane and abs(obstacle.position - self.ego.position) < self.car_length:
+                    reward = -5
+                    done = True
+                    break
 
         # Reward the ego car for maintaining speed and changing lanes
         if not done:
@@ -160,13 +165,15 @@ class HighwayEnv(gym.Env):
 if __name__=='__main__':
     env = HighwayEnv()
 
-    # Print the state of the ego 
+    # Print the initial state of the ego 
+    print(f"Timestep {env.time_step}:")
     print(f"Ego's position:{env.ego.position}\nEgo's speed: {env.ego.speed}\nEgo's acc: {env.ego.acceleration}\nEgo's lane: {env.ego.lane}")
-    # Print the state of the obstacles
+    # Print the initial state of the obstacles
     for obs in env.obstacles:
         i = 1
         print(f"Vehicle_{i}'s position:{obs.position}\nVehicle_{i}'s speed: {obs.speed}\nVehicle_{i}'s lane: {obs.lane}")
         i+=1
     obs, reward, done, _ = env.step('accelerate')
+    print(f"Timestep {env.time_step}:")
     print(f"Ego's position:{env.ego.position}\nEgo's speed: {env.ego.speed}\nEgo's acc: {env.ego.acceleration}\nEgo's lane: {env.ego.lane}")
     print(f"Reward = {reward}, done = {done}")

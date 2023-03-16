@@ -1,6 +1,8 @@
 import math
-import gymnasium as gym
-from gymnasium import spaces
+# import gymnasium as gym
+# from gymnasium import spaces
+import gym
+from gym import spaces
 import numpy as np
 
 class Vehicle:
@@ -14,20 +16,24 @@ class Vehicle:
         self.t = t
     
     def act(self, action):
-        if action == 'vKeeping':
+        if action == 'vKeeping' or action == 0:
             self.position += self.speed * self.t
-        if action == 'accelerate':
+        elif action == 'accelerate' or action == 1:
             self.acceleration = 1
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
-        if action == 'decelerate':
+        elif action == 'decelerate' or action == 2:
             self.acceleration = -1
             self.speed += self.acceleration * 0.1
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
-        if action == 'changeLaneR':
+        elif action == 'changeLaneR' or action == 3:
+            # print(f"Before, ego's lane: {self.lane}")
             self.lane = self.lane - 1
-        if action == 'changeLaneL':
+            # print(f"After, ego's lane: {self.lane}\n")
+        elif action == 'changeLaneL' or action == 4:
+            # print(f"Before, ego's lane: {self.lane}")
             self.lane = self.lane + 1
+            # print(f"After, ego's lane: {self.lane}\n")
 
 class HighwayEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -87,22 +93,11 @@ class HighwayEnv(gym.Env):
         return self._get_observation()
 
     def step(self, action):
-        # Update the state of the ego car based on the chosen action
-        # if action == 0:
-        #     self.ego_lane = max(self.ego_lane - 1, 0)
-        # elif action == 1:
-        #     self.ego_lane = min(self.ego_lane + 1, self.num_lanes - 1)
-        # elif action == 2: # TODOTODOTODOTODO
-        #     self.ego_acceleration = max(self.ego_acceleration - self.acceleration_step, -self.max_acceleration)
-        # elif action == 3: # TODOTODOTODOTODO
-        #     self.ego_acceleration = min(self.ego_acceleration + self.acceleration_step, self.max_acceleration)
-        # elif action == 4:
-        #     self.ego_acceleration = 0
-        # self.ego_speed = max(0, min(self.ego_speed + self.ego_acceleration, self.max_speed)) # TODOTODOTODOTODO
-        # self.ego_position += self.ego_speed*self.t
+        # print(f"Excecuted action: {action}")
+        # Increment the step count
+        self.time_step += 1
 
         self.ego.act(action)
-
         # Update the position and speed of the obstacles
         for obstacle in self.obstacles:
             # Update the sign
@@ -132,26 +127,31 @@ class HighwayEnv(gym.Env):
 
         done = False
         # Check for collisions between the ego and the boundary
+        
         if self.ego.lane < 0 or self.ego.lane > 3:
-            reward = -5
+            # print(f"Ego's lane: {self.ego.lane}")
+            print(f"Boundary Collision at timestep {self.time_step}")
+            reward = -100
             done = True 
 
         # Check for collisions between the ego car and obstacles
         if not done:
             for obstacle in self.obstacles:
                 if obstacle.lane == self.ego.lane and abs(obstacle.position - self.ego.position) < self.car_length:
-                    reward = -5
+                    print(f"Obs Collision at timestep {self.time_step}")
+                    reward = -100
                     done = True
                     break
 
         # Reward the ego car for maintaining speed and changing lanes
         if not done:
-            reward = self.ego.speed/self.max_speed
+            reward = self.ego.speed/self.max_speed/100
+            # reward = 0
             if action == 0 or action == 1:
-                reward += 0.1
+                reward -= 0.1
 
-        # Increment the step count
-        self.time_step += 1
+        if self.time_step > 1800:
+            done = True
 
         # Return the observation, reward, done flag, and additional info
         observation = self._get_observation()
@@ -159,11 +159,12 @@ class HighwayEnv(gym.Env):
 
     def _get_observation(self):
         # Get the state of the ego car and obstacles
-        observation = [self.ego.speed/self.max_speed, self.ego.acceleration/self.max_acceleration, self.ego.lane/3]
+        observation = [self.ego.speed/self.max_speed, self.ego.acceleration, (self.ego.lane+1)/4]
         for x in self.nearest_obstacles:
-            observation.extend([((self.ego.position-x.position)**2 + 9*(self.ego.lane-x.lane)**2)/((self.ego.position-x.position)**2 + 9*(self.ego.lane-x.lane)**2), \
-                                    x.speed, x.lane/3, x.sign])
+            observation.extend([(self.ego.position-x.position)**2 + 9*(self.ego.lane-x.lane)**2, \
+                                    x.speed/self.max_speed, x.lane/3, x.sign])
         observation = np.array(observation, dtype=np.float32)
+        # print(f"Shape of returned _get_observation: {observation.shape}")
         return observation
 
     def render(self, mode='human'):

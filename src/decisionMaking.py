@@ -1,6 +1,8 @@
 import math
-import gymnasium as gym
-from gymnasium import spaces
+# import gymnasium as gym
+# from gymnasium import spaces
+import gym
+from gym import spaces
 import numpy as np
 
 class Vehicle:
@@ -14,20 +16,24 @@ class Vehicle:
         self.t = t
     
     def act(self, action):
-        if action == 'vKeeping':
+        if action == 'vKeeping' or action == 0:
             self.position += self.speed * self.t
-        if action == 'accelerate':
+        elif action == 'accelerate' or action == 1:
             self.acceleration = 1
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
-        if action == 'decelerate':
+        elif action == 'decelerate' or action == 2:
             self.acceleration = -1
             self.speed += self.acceleration * 0.1
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
-        if action == 'changeLaneR':
+        elif action == 'changeLaneR' or action == 3:
+            # print(f"Before, ego's lane: {self.lane}")
             self.lane = self.lane - 1
-        if action == 'changeLaneL':
+            # print(f"After, ego's lane: {self.lane}\n")
+        elif action == 'changeLaneL' or action == 4:
+            # print(f"Before, ego's lane: {self.lane}")
             self.lane = self.lane + 1
+            # print(f"After, ego's lane: {self.lane}\n")
 
 class HighwayEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -48,6 +54,10 @@ class HighwayEnv(gym.Env):
         self.max_time_step = 1200
         self.obstacle_speeds = [20, 30, 40]
 
+        self.ego = None
+        self.obstacles = []
+        self.nearest_obstacles = []
+
         # Initialize the state of the environment
         self.reset()
 
@@ -64,36 +74,30 @@ class HighwayEnv(gym.Env):
         self.ego = Vehicle(position=50, speed=np.random.randint(30, 50), acceleration=0, lane=np.random.randint(0, self.num_lanes), sign='none')
         
         self.obstacles = []
+
         # Initialize the obstacle
         for i in range(self.num_obstacles):
             feasible = False
             while not feasible:
                 position = np.random.uniform(0, 100)
                 lane = np.random.randint(0, self.num_lanes)
-                if abs(position - self.ego.position) > 6 or lane != self.ego.lane:
-                    feasible = True
-            speed = np.random.choice(self.obstacle_speeds)
+                # If the generated obstacle does not collide with the ego and other vehicles, feasible
+                if (abs(position - self.ego.position) > 10 or lane != self.ego.lane) and (abs(position - o.position) > 10 or lane != o.lane for o in self.obstacles):
+                    if position > 30 or lane != self.ego.lane: # No vehicle behind the ego
+                        feasible = True
+            speed = np.random.randint(30, 40) if np.random.random()<0.5 else np.random.randint(40, 50)
             obstacle = Vehicle(position, speed, lane, acceleration=0)
             self.obstacles.append(obstacle)
+        # Get nearest obstacles
+        self.nearest_obstacles = sorted(self.obstacles, key=lambda o: (self.ego.position-o.position)**2 + 9*(self.ego.lane-o.lane)**2, reverse=False)[:5]
         return self._get_observation()
 
     def step(self, action):
-        # Update the state of the ego car based on the chosen action
-        # if action == 0:
-        #     self.ego_lane = max(self.ego_lane - 1, 0)
-        # elif action == 1:
-        #     self.ego_lane = min(self.ego_lane + 1, self.num_lanes - 1)
-        # elif action == 2: # TODOTODOTODOTODO
-        #     self.ego_acceleration = max(self.ego_acceleration - self.acceleration_step, -self.max_acceleration)
-        # elif action == 3: # TODOTODOTODOTODO
-        #     self.ego_acceleration = min(self.ego_acceleration + self.acceleration_step, self.max_acceleration)
-        # elif action == 4:
-        #     self.ego_acceleration = 0
-        # self.ego_speed = max(0, min(self.ego_speed + self.ego_acceleration, self.max_speed)) # TODOTODOTODOTODO
-        # self.ego_position += self.ego_speed*self.t
+        # print(f"Excecuted action: {action}")
+        # Increment the step count
+        self.time_step += 1
 
         self.ego.act(action)
-
         # Update the position and speed of the obstacles
         for obstacle in self.obstacles:
             # Update the sign
@@ -113,34 +117,41 @@ class HighwayEnv(gym.Env):
             # After 3s, excecute lane changing
             if self.time_step == obstacle.signtime:
                 obstacle.lane += obstacle.sign
-                if abs(obstacle.position - self.ego.position) <= 6 and obstacle.lane == self.ego.lane:
+                if abs(obstacle.position - self.ego.position) <= 10 and obstacle.lane == self.ego.lane:
                     obstacle.lane -= obstacle.sign
                 obstacle.signtime = -1
 
             obstacle.position += obstacle.speed * self.t
 
+        self.nearest_obstacles = sorted(self.obstacles, key=lambda o: (self.ego.position-o.position)**2 + 9*(self.ego.lane-o.lane)**2, reverse=False)[:5]
+
         done = False
         # Check for collisions between the ego and the boundary
+        
         if self.ego.lane < 0 or self.ego.lane > 3:
-            reward = -5
+            # print(f"Ego's lane: {self.ego.lane}")
+            print(f"Boundary Collision at timestep {self.time_step}")
+            reward = -100
             done = True 
 
         # Check for collisions between the ego car and obstacles
         if not done:
             for obstacle in self.obstacles:
                 if obstacle.lane == self.ego.lane and abs(obstacle.position - self.ego.position) < self.car_length:
-                    reward = -5
+                    print(f"Obs Collision at timestep {self.time_step}")
+                    reward = -100
                     done = True
                     break
 
         # Reward the ego car for maintaining speed and changing lanes
         if not done:
-            reward = self.ego.speed/self.max_speed
+            reward = self.ego.speed/self.max_speed/100
+            # reward = 0
             if action == 0 or action == 1:
-                reward += 0.1
+                reward -= 0.1
 
-        # Increment the step count
-        self.time_step += 1
+        if self.time_step > 1800:
+            done = True
 
         # Return the observation, reward, done flag, and additional info
         observation = self._get_observation()
@@ -148,14 +159,12 @@ class HighwayEnv(gym.Env):
 
     def _get_observation(self):
         # Get the state of the ego car and obstacles
-        observation = [self.ego.speed/self.max_speed, self.ego.acceleration/self.max_acceleration, self.ego.lane/3]
-        sorted_obstacles = sorted(self.obstacles, key=lambda o: (self.ego.position-o.position)**2 + 9*(self.ego.lane-o.lane)**2, reverse=True)
-        for i in range(5):
-            x = sorted_obstacles[i]
-            observation.extend([((self.ego.position-x.position)**2 + 9*(self.ego.lane-x.lane)**2)/((self.ego.position-sorted_obstacles[4].position)**2 + 9*(self.ego.lane-sorted_obstacles[4].lane)**2), \
-                                    x.speed, x.lane/3, x.sign])
+        observation = [self.ego.speed/self.max_speed, self.ego.acceleration, (self.ego.lane+1)/4]
+        for x in self.nearest_obstacles:
+            observation.extend([(self.ego.position-x.position)**2 + 9*(self.ego.lane-x.lane)**2, \
+                                    x.speed/self.max_speed, x.lane/3, x.sign])
         observation = np.array(observation, dtype=np.float32)
-        print(f"Shape of the observation: {np.shape(observation)}")
+        # print(f"Shape of returned _get_observation: {observation.shape}")
         return observation
 
     def render(self, mode='human'):
@@ -169,11 +178,15 @@ if __name__=='__main__':
     print(f"Timestep {env.time_step}:")
     print(f"Ego's position:{env.ego.position}\nEgo's speed: {env.ego.speed}\nEgo's acc: {env.ego.acceleration}\nEgo's lane: {env.ego.lane}")
     # Print the initial state of the obstacles
-    for obs in env.obstacles:
-        i = 1
+    for i in range(len(env.obstacles)):
+        obs = env.obstacles[i]
         print(f"Vehicle_{i}'s position:{obs.position}\nVehicle_{i}'s speed: {obs.speed}\nVehicle_{i}'s lane: {obs.lane}")
-        i+=1
+
     obs, reward, done, _ = env.step('accelerate')
     print(f"Timestep {env.time_step}:")
-    print(f"Ego's position:{env.ego.position}\nEgo's speed: {env.ego.speed}\nEgo's acc: {env.ego.acceleration}\nEgo's lane: {env.ego.lane}")
+    print(f"Ego's position:{env.ego.position}\nEgo's speed: {env.ego.speed}\nEgo's acc: {env.ego.acceleration}\nEgo's lane: {env.ego.lane}\n")
+    for i in range(len(env.nearest_obstacles)):
+        obs = env.nearest_obstacles[i]
+        print(f"Nearest vehicle_{i}'s position:{obs.position}\nVehicle_{i}'s speed: {obs.speed}\nVehicle_{i}'s lane: {obs.lane}\n")
+
     print(f"Reward = {reward}, done = {done}")

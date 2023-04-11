@@ -90,7 +90,7 @@ class HighwayEnv(gym.Env):
         self.manager = RoadManager(self.num_lanes)
 
         # Initialize the ego
-        self.ego = Vehicle(position=50, speed=np.random.randint(30, 50), acceleration=0, lane=np.random.randint(0, self.num_lanes), sign='none', target_speed=50)
+        self.ego = Vehicle(position=0, speed=np.random.randint(30, 50), acceleration=0, lane=np.random.randint(0, self.num_lanes), sign='none', target_speed=50)
         
         self.manager.add(self.ego)
         
@@ -98,13 +98,19 @@ class HighwayEnv(gym.Env):
 
         # Initialize the obstacle
         for i in range(self.num_obstacles):
-            feasible = False
-            while not feasible:
+            FEASIBLE = False
+            while not FEASIBLE:
                 position = np.random.uniform(0, 100)
                 lane = np.random.randint(0, self.num_lanes)
-                # If the generated obstacle does not collide with the ego and other vehicles, considered feasible
-                if (abs(position - self.ego.position) > 10 or lane != self.ego.lane) and (abs(position - o.position) > 10 or lane != o.lane for o in self.obstacles):
-                    feasible = True
+
+                # If the generated obstacle does not collide with the ego and other vehicles, considered FEASIBLE
+                if (abs(position - self.ego.position) > 10 or lane != self.ego.lane):
+                    for o in self.obstacles:
+                        if abs(position - o.position) <= 10 and lane == o.lane:
+                            FEASIBLE = False
+                            break
+                    else:
+                        FEASIBLE = True
             speed = np.random.randint(30, 40) if np.random.random()<0.5 else np.random.randint(40, 50)
             obstacle = Vehicle(position, speed, lane, acceleration=0, target_speed=speed)
             self.obstacles.append(obstacle)
@@ -121,11 +127,11 @@ class HighwayEnv(gym.Env):
         self.manager.delete(self.ego)
         self.ego.act(action)
         self.manager.add(self.ego)
-        # Decision Tree
 
-        # Update the position and speed of the obstacles
+        # Update each obstacle's state
         for obstacle in self.obstacles:
-
+        
+        # ------------------------------ Decision Tree---
             FINISH = 0
             CHANGELANE = 1
             if obstacle.signtime == self.time_step: # Time to change lane
@@ -199,16 +205,7 @@ class HighwayEnv(gym.Env):
                 obstacle.act('accelerate')
             else:
                 obstacle.act('vKeeping')
-        
-
-            # After 3s, excecute lane changing
-            if self.time_step == obstacle.signtime:
-                obstacle.lane += obstacle.sign
-                if abs(obstacle.position - self.ego.position) <= 10 and obstacle.lane == self.ego.lane:
-                    obstacle.lane -= obstacle.sign
-                obstacle.signtime = -1
-
-            obstacle.position += obstacle.speed * self.t
+            # ------------------------------ Decision Tree Ends---
 
         self.nearest_obstacles = sorted(self.obstacles, key=lambda o: (self.ego.position-o.position)**2 + 9*(self.ego.lane-o.lane)**2, reverse=False)[:5]
 
@@ -260,21 +257,27 @@ class HighwayEnv(gym.Env):
 
 if __name__=='__main__':
     env = HighwayEnv()
-
+    for i in range(len(env.manager.holding_system)):
+        laneObs = []
+        for o in env.manager.holding_system[i]:
+            laneObs.append(o.position)
+        laneObs = sorted(laneObs)
+        print(f"At lane {i}, the positions of the obstacles are {laneObs}")
     # Print the initial state of the ego 
-    print(f"Timestep {env.time_step}:")
-    print(f"Ego's position:{env.ego.position}\nEgo's speed: {env.ego.speed}\nEgo's acc: {env.ego.acceleration}\nEgo's lane: {env.ego.lane}")
+    # print(f"Timestep {env.time_step}:")
+    # print(f"Ego's position:{env.ego.position}\nEgo's speed: {env.ego.speed}\nEgo's acc: {env.ego.acceleration}\nEgo's lane: {env.ego.lane}")
     # Print the initial state of the obstacles
-    for i in range(len(env.obstacles)):
-        obs = env.obstacles[i]
-        print(f"Vehicle_{i}'s position:{obs.position}\nVehicle_{i}'s speed: {obs.speed}\nVehicle_{i}'s lane: {obs.lane}")
+
+    # for i in range(len(env.obstacles)):
+    #     obs = env.obstacles[i]
+    #     print(f"Vehicle_{i}'s position:{obs.position}\nVehicle_{i}'s speed: {obs.speed}\nVehicle_{i}'s lane: {obs.lane}")
 
     obs, reward, done, _ = env.step('accelerate')
-    print(f"Timestep {env.time_step}:")
-    print(f"Ego's position:{env.ego.position}\nEgo's speed: {env.ego.speed}\nEgo's acc: {env.ego.acceleration}\nEgo's lane: {env.ego.lane}\n")
-    for i in range(len(env.nearest_obstacles)):
-        obs = env.nearest_obstacles[i]
-        print(f"Nearest vehicle_{i}'s position:{obs.position}\nVehicle_{i}'s speed: {obs.speed}\nVehicle_{i}'s lane: {obs.lane}\n")
+    # print(f"Timestep {env.time_step}:")
+    # print(f"Ego's position:{env.ego.position}\nEgo's speed: {env.ego.speed}\nEgo's acc: {env.ego.acceleration}\nEgo's lane: {env.ego.lane}\n")
+    # for i in range(len(env.nearest_obstacles)):
+    #     obs = env.nearest_obstacles[i]
+    #     print(f"Nearest vehicle_{i}'s position:{obs.position}\nVehicle_{i}'s speed: {obs.speed}\nVehicle_{i}'s lane: {obs.lane}\n")
 
     print(f"Reward = {reward}, done = {done}")
     for i in range(len(env.manager.holding_system)):

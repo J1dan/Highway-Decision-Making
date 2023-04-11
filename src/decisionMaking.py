@@ -6,7 +6,7 @@ from gym import spaces
 import numpy as np
 
 class Vehicle:
-    def __init__(self, position, speed, lane, acceleration=0, sign=0, t=0.1):
+    def __init__(self, position, speed, lane, acceleration=0, sign=0, t=0.1, target_speed=30):
         self.position = position
         self.speed = speed
         self.acceleration = acceleration
@@ -14,6 +14,7 @@ class Vehicle:
         self.sign = sign
         self.signtime = -1
         self.t = t
+        self.target_speed = target_speed
     
     def act(self, action):
         if action == 'vKeeping' or action == 0:
@@ -81,12 +82,12 @@ class HighwayEnv(gym.Env):
             while not feasible:
                 position = np.random.uniform(0, 100)
                 lane = np.random.randint(0, self.num_lanes)
-                # If the generated obstacle does not collide with the ego and other vehicles, feasible
+                # If the generated obstacle does not collide with the ego and other vehicles, considered feasible
                 if (abs(position - self.ego.position) > 10 or lane != self.ego.lane) and (abs(position - o.position) > 10 or lane != o.lane for o in self.obstacles):
                     if position > 30 or lane != self.ego.lane: # No vehicle behind the ego
                         feasible = True
             speed = np.random.randint(30, 40) if np.random.random()<0.5 else np.random.randint(40, 50)
-            obstacle = Vehicle(position, speed, lane, acceleration=0)
+            obstacle = Vehicle(position, speed, lane, acceleration=0, target_speed=speed)
             self.obstacles.append(obstacle)
         # Get nearest obstacles
         self.nearest_obstacles = sorted(self.obstacles, key=lambda o: (self.ego.position-o.position)**2 + 9*(self.ego.lane-o.lane)**2, reverse=False)[:5]
@@ -103,9 +104,9 @@ class HighwayEnv(gym.Env):
             # Update the sign
             if self.time_step % 100 == 0:
                 if np.random.random() < 0.2:
-                    if obstacle.lane == 1:
+                    if obstacle.lane == 0:
                         obstacle.sign = 1 # Change lane to left
-                    elif obstacle.lane == 4:
+                    elif obstacle.lane == 3:
                         obstacle.sign = -1 # Change lane to right
                     elif np.random.random() < 0.5:
                         obstacle.sign = 1 # Change lane to left

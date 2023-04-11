@@ -4,6 +4,8 @@ import math
 import gym
 from gym import spaces
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 class Vehicle:
     def __init__(self, position, speed, lane, acceleration=0, sign=0, t=0.1, target_speed=30):
@@ -252,11 +254,39 @@ class HighwayEnv(gym.Env):
         return observation
 
     def render(self, mode='human'):
-        # Display the current state of the environment
-        pass
+        if mode == 'human':
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.set_xlim([self.ego.position-50, self.ego.position+50])
+            ax.set_ylim([-(self.num_lanes * self.lane_width), 0])
+            ax.set_xlabel('Position')
+            ax.set_ylabel('Lane')
+
+            # Plot ego vehicle
+            ego_vehicle = patches.Rectangle((self.ego.position - self.car_length / 2, -self.ego.lane * self.lane_width - self.car_width / 2),
+                                             self.car_length, self.car_width, fc='b', label='Ego Vehicle')
+            ax.add_patch(ego_vehicle)
+
+            # Plot obstacles
+            for obstacle in self.obstacles:
+                obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, -obstacle.lane * self.lane_width - self.car_width / 2),
+                                                     self.car_length, self.car_width, fc='r', label='Obstacle')
+                ax.add_patch(obstacle_vehicle)
+
+            # Plot nearest obstacles
+            for obstacle in self.nearest_obstacles:
+                obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, -obstacle.lane * self.lane_width - self.car_width / 2),
+                                                     self.car_length, self.car_width, fc='g', label='Nearest Obstacle')
+                ax.add_patch(obstacle_vehicle)
+
+            # Set legend
+            ax.legend()
+
+            plt.title(f'Step: {self.time_step}, Speed: {self.ego.speed:.2f}, Lane: {self.ego.lane}')
+            plt.show()
 
 if __name__=='__main__':
     env = HighwayEnv()
+    env.render()
     for i in range(len(env.manager.holding_system)):
         laneObs = []
         for o in env.manager.holding_system[i]:

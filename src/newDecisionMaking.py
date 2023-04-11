@@ -15,7 +15,7 @@ class Vehicle:
         self.signtime = -1
         self.t = t
         self.target_speed = target_speed
-    
+
     def act(self, action):
         if action == 'vKeeping' or action == 0:
             self.position += self.speed * self.t
@@ -30,11 +30,27 @@ class Vehicle:
         elif action == 'changeLaneR' or action == 3:
             # print(f"Before, ego's lane: {self.lane}")
             self.lane = self.lane - 1
+            self.position += self.speed * self.t
+            self.sign = 0
             # print(f"After, ego's lane: {self.lane}\n")
         elif action == 'changeLaneL' or action == 4:
             # print(f"Before, ego's lane: {self.lane}")
             self.lane = self.lane + 1
+            self.position += self.speed * self.t
+            self.sign = 0
             # print(f"After, ego's lane: {self.lane}\n")
+
+class RoadManager(object):
+    def __init__(self, num_lanes=4):
+        self.holding_system = []
+        for i in range(num_lanes):
+            self.holding_system.append([])
+
+    def add(self, vehicle):
+        self.holding_system[vehicle.lane].append(vehicle)
+
+    def delete(self, vehicle):
+        self.holding_system[vehicle.lane].remove(vehicle)
 
 class HighwayEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -71,8 +87,12 @@ class HighwayEnv(gym.Env):
     def reset(self):
         self.time_step = 0
 
+        self.manager = RoadManager(self.num_lanes)
+
         # Initialize the ego
-        self.ego = Vehicle(position=50, speed=np.random.randint(30, 50), acceleration=0, lane=np.random.randint(0, self.num_lanes), sign='none')
+        self.ego = Vehicle(position=50, speed=np.random.randint(30, 50), acceleration=0, lane=np.random.randint(0, self.num_lanes), sign='none', target_speed=50)
+        
+        self.manager.add(self.ego)
         
         self.obstacles = []
 
@@ -84,11 +104,12 @@ class HighwayEnv(gym.Env):
                 lane = np.random.randint(0, self.num_lanes)
                 # If the generated obstacle does not collide with the ego and other vehicles, considered feasible
                 if (abs(position - self.ego.position) > 10 or lane != self.ego.lane) and (abs(position - o.position) > 10 or lane != o.lane for o in self.obstacles):
-                    if position > 30 or lane != self.ego.lane: # No vehicle behind the ego
-                        feasible = True
+                    feasible = True
             speed = np.random.randint(30, 40) if np.random.random()<0.5 else np.random.randint(40, 50)
             obstacle = Vehicle(position, speed, lane, acceleration=0, target_speed=speed)
             self.obstacles.append(obstacle)
+
+            self.manager.add(obstacle)
         # Get nearest obstacles
         self.nearest_obstacles = sorted(self.obstacles, key=lambda o: (self.ego.position-o.position)**2 + 9*(self.ego.lane-o.lane)**2, reverse=False)[:5]
         return self._get_observation()
@@ -97,23 +118,88 @@ class HighwayEnv(gym.Env):
         # print(f"Excecuted action: {action}")
         # Increment the step count
         self.time_step += 1
-
+        self.manager.delete(self.ego)
         self.ego.act(action)
+        self.manager.add(self.ego)
+        # Decision Tree
+
         # Update the position and speed of the obstacles
         for obstacle in self.obstacles:
-            # Update the sign
-            if self.time_step % 100 == 0:
-                if np.random.random() < 0.2:
-                    if obstacle.lane == 0:
-                        obstacle.sign = 1 # Change lane to left
-                    elif obstacle.lane == 3:
-                        obstacle.sign = -1 # Change lane to right
-                    elif np.random.random() < 0.5:
-                        obstacle.sign = 1 # Change lane to left
+
+            FINISH = 0
+            CHANGELANE = 1
+            if obstacle.signtime == self.time_step: # Time to change lane
+                for nearObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
+                    if abs(nearObs.position - obstacle.position) < 6: # If change lane, collide
+                        # Reset, not finish
+                        obstacle.sign = 0
+                        obstacle.signtime = -1
+                        CHANGELANE = 0
+                        break
+                if CHANGELANE:
+                    if obstacle.sign == -1:
+                        self.manager.delete(obstacle)
+                        obstacle.act('changeLaneR')
+                        self.manager.add(obstacle)
+                        
                     else:
-                        obstacle.sign = -1 # Change lane to right
-                    # Terminal signing time, after which the obstacle would change lane
-                    obstacle.signtime = self.time_step + 30
+                        self.manager.delete(obstacle)
+                        obstacle.act('changeLaneL')
+                        self.manager.add(obstacle)
+                    obstacle.signtime = -1 # Reset signtime
+                    FINISH = 1 # Done, no operation needed
+
+            # See if is too close to the obstacles ahead
+            if not FINISH:
+                for o in self.manager.holding_system[obstacle.lane]:
+                    if o.position - obstacle.position < 20: # Too close
+                        if o.speed < obstacle.speed:
+                            obstacle.act('decelerate')
+                            obstacle.signtime = self.time_step + 20
+                            if obstacle.lane == 0:
+                                obstacle.sign = 1 # Change lane to left
+                                for nearObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
+                                    if abs(nearObs.position - obstacle.position) < 6:
+                                        obstacle.sign = 0
+                                        obstacle.signtime = -1
+                                        break
+
+                            elif obstacle.lane == 3:
+                                obstacle.sign = -1 # Change lane to right
+                                for nearObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
+                                    if abs(nearObs.position - obstacle.position) < 6:
+                                        obstacle.sign = 0
+                                        obstacle.signtime = -1
+                                        break
+                            
+                            else:
+                                obstacle.sign = 1 # Change lane to left
+                                LABEL = 1 # OK to change lane
+                                for nearObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
+                                    if abs(nearObs.position - obstacle.position) < 6:
+                                        obstacle.sign = 0
+                                        obstacle.signtime = -1
+                                        LABEL = 0
+                                        break
+                                if LABEL == 0:
+                                    obstacle.sign = -1
+                                    for nearObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
+                                        if abs(nearObs.position - obstacle.position) < 6:
+                                            obstacle.sign = 0
+                                            obstacle.signtime = -1
+                                            LABEL = 0
+                                            break 
+                        
+                        FINISH = 1 # current obstacle update done, continue to the next obstacle
+                        break
+            if FINISH:
+                continue
+
+            if obstacle.speed < obstacle.target_speed:
+                obstacle.act('accelerate')
+            else:
+                obstacle.act('vKeeping')
+        
 
             # After 3s, excecute lane changing
             if self.time_step == obstacle.signtime:
@@ -191,3 +277,9 @@ if __name__=='__main__':
         print(f"Nearest vehicle_{i}'s position:{obs.position}\nVehicle_{i}'s speed: {obs.speed}\nVehicle_{i}'s lane: {obs.lane}\n")
 
     print(f"Reward = {reward}, done = {done}")
+    for i in range(len(env.manager.holding_system)):
+        laneObs = []
+        for o in env.manager.holding_system[i]:
+            laneObs.append(o.position)
+        laneObs = sorted(laneObs)
+        print(f"At lane {i}, the positions of the obstacles are {laneObs}")

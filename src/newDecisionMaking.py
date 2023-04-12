@@ -133,12 +133,12 @@ class HighwayEnv(gym.Env):
         # Update each obstacle's state
         for obstacle in self.obstacles:
         
-        # ------------------------------ Decision Tree---
+        # --------------------- Decision Tree------------------------
             FINISH = 0
             CHANGELANE = 1
             if obstacle.signtime == self.time_step: # Time to change lane
-                for nearObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
-                    if abs(nearObs.position - obstacle.position) < 6: # If change lane, collide
+                for nearbyObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
+                    if abs(nearbyObs.position - obstacle.position) < 6: # If change lane, collide
                         # Reset, not finish
                         obstacle.sign = 0
                         obstacle.signtime = -1
@@ -155,27 +155,33 @@ class HighwayEnv(gym.Env):
                         obstacle.act('changeLaneL')
                         self.manager.add(obstacle)
                     obstacle.signtime = -1 # Reset signtime
-                    FINISH = 1 # Done, no operation needed
+                    FINISH = 1 # Done, no further operation needed
 
             # See if is too close to the obstacles ahead
             if not FINISH:
                 for o in self.manager.holding_system[obstacle.lane]:
-                    if o.position - obstacle.position < 20: # Too close
+                    if o.position - obstacle.position < 15: # Too close
                         if o.speed < obstacle.speed:
                             obstacle.act('decelerate')
-                            obstacle.signtime = self.time_step + 20
+                            if obstacle.sign != 0: # Already turned on light, do not update the signtime
+                                FINISH = 1
+                                break
+                            
+                            obstacle.signtime = self.time_step + 20 # Turn on the turn signal
+
                             if obstacle.lane == 0:
                                 obstacle.sign = 1 # Change lane to left
-                                for nearObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
-                                    if abs(nearObs.position - obstacle.position) < 6:
+                                for nearbyObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
+                                    # If nearby lane has dangerous obstacle, TURN OFF
+                                    if abs(nearbyObs.position - obstacle.position) < 6: 
                                         obstacle.sign = 0
                                         obstacle.signtime = -1
                                         break
 
                             elif obstacle.lane == 3:
                                 obstacle.sign = -1 # Change lane to right
-                                for nearObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
-                                    if abs(nearObs.position - obstacle.position) < 6:
+                                for nearbyObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
+                                    if abs(nearbyObs.position - obstacle.position) < 6:
                                         obstacle.sign = 0
                                         obstacle.signtime = -1
                                         break
@@ -183,31 +189,38 @@ class HighwayEnv(gym.Env):
                             else:
                                 obstacle.sign = 1 # Change lane to left
                                 LABEL = 1 # OK to change lane
-                                for nearObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
-                                    if abs(nearObs.position - obstacle.position) < 6:
+                                for nearbyObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
+                                    if abs(nearbyObs.position - obstacle.position) < 6:
                                         obstacle.sign = 0
                                         obstacle.signtime = -1
                                         LABEL = 0
                                         break
-                                if LABEL == 0:
+                                    
+                                if LABEL == 0: # Cannot change to left, try changing to right
                                     obstacle.sign = -1
-                                    for nearObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
-                                        if abs(nearObs.position - obstacle.position) < 6:
+                                    for nearbyObs in self.manager.holding_system[obstacle.lane+obstacle.sign]:
+                                        if abs(nearbyObs.position - obstacle.position) < 6:
                                             obstacle.sign = 0
                                             obstacle.signtime = -1
                                             LABEL = 0
-                                            break 
-                        
-                        FINISH = 1 # current obstacle update done, continue to the next obstacle
-                        break
+                                            break
+
+                            FINISH = 1 # current obstacle update done, continue to the next obstacle
+                            break
+                    
             if FINISH:
                 continue
 
+            # No obstacles ahead
             if obstacle.speed < obstacle.target_speed:
+                obstacle.sign = 0
+                obstacle.signtime = -1
                 obstacle.act('accelerate')
             else:
+                obstacle.sign = 0
+                obstacle.signtime = -1
                 obstacle.act('vKeeping')
-            # ------------------------------ Decision Tree Ends---
+            #  --------------------- Decision Tree Ends Here------------------------
 
         self.nearest_obstacles = sorted(self.obstacles, key=lambda o: (self.ego.position-o.position)**2 + 9*(self.ego.lane-o.lane)**2, reverse=False)[:5]
 

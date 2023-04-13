@@ -1,4 +1,5 @@
 import gym
+import matplotlib.pyplot as plt
 from newDecisionMaking import HighwayEnv
 import stable_baselines3
 from stable_baselines3 import DQN
@@ -9,7 +10,7 @@ env = HighwayEnv()
 # check_env(env)
 
 model = DQN("MlpPolicy", env, verbose=1)
-model.learn(total_timesteps=10000)
+model.learn(total_timesteps=1)
 model.save("model")
 print(f"Model saved")
 # del model
@@ -20,10 +21,11 @@ print(f"Mean reward = {mean_reward}, std_reward = {std_reward}")
 
 vec_env = model.get_env()
 obs = vec_env.reset()
-# for i in range(1000):
-#     action, _state = model.predict(obs, deterministic=True)
-#     obs, reward, done, info = vec_env.step(action)
-#     vec_env.render()
+fig, ax = plt.subplots(figsize=(10, 5))
+for i in range(1000):
+    action, _state = model.predict(obs, deterministic=True)
+    obs, reward, done, info = vec_env.step(action)
+    vec_env.render()
     # VecEnv resets automatically
     # if done:
     #   obs = vec_env.reset()

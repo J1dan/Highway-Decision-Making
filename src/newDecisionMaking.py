@@ -26,7 +26,7 @@ class Vehicle:
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
         elif action == 'decelerate' or action == 2:
-            self.acceleration = -1
+            self.acceleration = -10
             self.speed += self.acceleration * 0.1
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
         elif action == 'changeLaneR' or action == 3:
@@ -265,40 +265,75 @@ class HighwayEnv(gym.Env):
         observation = np.array(observation, dtype=np.float32)
         # print(f"Shape of returned _get_observation: {observation.shape}")
         return observation
-
+    
     def render(self, mode='human'):
         if mode == 'human':
-            fig, ax = plt.subplots(figsize=(10, 5))
-            ax.set_xlim([self.ego.position-50, self.ego.position+50])
+        #     fig, ax = plt.subplots(figsize=(10, 5))
+            plt.cla()
+
+            ax.set_xlim([self.ego.position-10, self.ego.position+100])
             ax.set_ylim([-(self.num_lanes * self.lane_width), 0])
             ax.set_xlabel('Position')
             ax.set_ylabel('Lane')
+            ax.set_facecolor('#d3d3d3')  # Set the background color to grey
+            ax.set_aspect('equal')
+            for i in range(self.num_lanes):  # draw lane line
+                y = -i * self.lane_width
+                ax.axhline(y=y, color='w', linestyle='--')
 
             # Plot ego vehicle
-            ego_vehicle = patches.Rectangle((self.ego.position - self.car_length / 2, -self.ego.lane * self.lane_width - self.car_width / 2),
+            ego_vehicle = patches.Rectangle((self.ego.position - self.car_length / 2, -2-self.ego.lane * self.lane_width - self.car_width / 2),
                                              self.car_length, self.car_width, fc='b', label='Ego Vehicle')
             ax.add_patch(ego_vehicle)
 
             # Plot obstacles
             for obstacle in self.obstacles:
-                obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, -obstacle.lane * self.lane_width - self.car_width / 2),
+                obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, -2-obstacle.lane * self.lane_width - self.car_width / 2),
                                                      self.car_length, self.car_width, fc='r', label='Obstacle')
                 ax.add_patch(obstacle_vehicle)
+                if obstacle.sign == 1: # Change lane to right
+                    arrow = patches.Arrow(obstacle.position - self.car_length / 4,  -2-obstacle.lane * self.lane_width, 0, -2, width=1, color='yellow')
+                    ax.add_patch(arrow)
+                if obstacle.sign == -1: # Change lane to right
+                    arrow = patches.Arrow(obstacle.position - self.car_length / 4,  -2-obstacle.lane * self.lane_width, 0, 2, width=1, color='yellow')
+                    ax.add_patch(arrow)
 
             # Plot nearest obstacles
             for obstacle in self.nearest_obstacles:
-                obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, -obstacle.lane * self.lane_width - self.car_width / 2),
+                obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, -2-obstacle.lane * self.lane_width - self.car_width / 2),
                                                      self.car_length, self.car_width, fc='g', label='Nearest Obstacle')
                 ax.add_patch(obstacle_vehicle)
-
+                if obstacle.sign == 1: # Change lane to right
+                    arrow = patches.Arrow(obstacle.position - self.car_length / 4,  -2-obstacle.lane * self.lane_width, 0, -2, width=1, color='yellow')
+                    ax.add_patch(arrow)
+                if obstacle.sign == -1: # Change lane to right
+                    arrow = patches.Arrow(obstacle.position - self.car_length / 4,  -2-obstacle.lane * self.lane_width, 0, 2, width=1, color='yellow')
+                    ax.add_patch(arrow)
             # Set legend
-            ax.legend()
+            # ax.legend()
 
             plt.title(f'Step: {self.time_step}, Speed: {self.ego.speed:.2f}, Lane: {self.ego.lane}')
-            plt.show()
+            # plt.show(block=False)
+            plt.pause(0.01)
+
+            # Update the environment for one time step
+            observation, reward, done, info = self.step(0)
+
+            self.time_step += 1
+
+            # Check if the episode is over
+            if self.time_step >= self.max_time_step or done:
+                self.reset()
+                return
+
+            # Render the updated visualization
+            self.render()
 
 if __name__=='__main__':
     env = HighwayEnv()
+    fig, ax = plt.subplots(figsize=(10, 5))
+    # env.reset()
+    plt.show(block=False)
     env.render()
     for i in range(len(env.manager.holding_system)):
         laneObs = []

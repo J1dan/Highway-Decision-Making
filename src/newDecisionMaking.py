@@ -270,6 +270,10 @@ class HighwayEnv(gym.Env):
         if mode == 'human':
         #     fig, ax = plt.subplots(figsize=(10, 5))
             plt.cla()
+            # stopping simulation with the esc key.
+            plt.gcf().canvas.mpl_connect(
+                'key_release_event',
+                lambda event: [exit(0) if event.key == 'escape' else None])
 
             ax.set_xlim([self.ego.position-10, self.ego.position+100])
             ax.set_ylim([-(self.num_lanes * self.lane_width), 0])

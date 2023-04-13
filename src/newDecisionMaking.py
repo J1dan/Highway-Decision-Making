@@ -9,6 +9,7 @@ import matplotlib.patches as patches
 
 class Vehicle:
     def __init__(self, position, speed, lane, acceleration=0, sign=0, t=0.1, target_speed=30):
+        self.action_viz = 'None'
         self.position = position
         self.speed = speed
         self.acceleration = acceleration
@@ -19,78 +20,63 @@ class Vehicle:
         self.target_speed = target_speed
 
     def act(self, action):
+        self.action_viz = action
         if action == 'maintain' or action == 0:
-            self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t
+            pass
 
         elif action == 'changeLaneR' or action == 1:
             self.lane = self.lane - 1
-            self.position += self.speed * self.t
             self.sign = 0
 
         elif action == 'changeLaneL' or action == 2:
             self.lane = self.lane + 1
-            self.position += self.speed * self.t
             self.sign = 0
 
-        elif action == 'accelerate_0.05' or action == 3:
-            if self.acceleration < 8:     
-                self.acceleration += 0.05
-            self.speed += self.acceleration * self.t
-            self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
+        elif action == 'accelerate_0.05' or action == 3:    
+            self.acceleration += 0.05
 
         elif action == 'accelerate_0.1' or action == 4:
-            if self.acceleration < 8: 
-                self.acceleration += 0.1
-            self.speed += self.acceleration * self.t
-            self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
+            self.acceleration += 0.1
 
         elif action == 'accelerate_0.2' or action == 5:
-            if self.acceleration < 8: 
-                self.acceleration += 0.2
-            self.speed += self.acceleration * self.t
-            self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
+            self.acceleration += 0.2
 
         elif action == 'accelerate_0.3' or action == 6:
-            if self.acceleration < 8: 
-                self.acceleration += 0.3
-            self.speed += self.acceleration * self.t
-            self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
+            self.acceleration += 0.3
 
         elif action == 'accelerate_0.4' or action == 7:
-            if self.acceleration < 8: 
-                self.acceleration += 0.4
-            self.speed += self.acceleration * self.t
-            self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
+            self.acceleration += 0.4
 
         elif action == 'decelerate_0.2' or action == 8:
-            if self.acceleration > -10: 
-                self.acceleration -= 0.2
-            self.speed += self.acceleration * self.t
-            self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
+            self.acceleration -= 0.2
 
         elif action == 'decelerate_0.4' or action == 9:
-            if self.acceleration > -10:
-                self.acceleration -= 0.4
-            self.speed += self.acceleration * self.t
-            self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
+            self.acceleration -= 0.4
 
         elif action == 'decelerate_0.6' or action == 10:
-            if self.acceleration > -10:
-                self.acceleration -= 0.6
-            self.speed += self.acceleration * self.t
-            self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
+            self.acceleration -= 0.6
 
         elif action == 'decelerate_0.8' or action == 11:
-            if self.acceleration > -10:
-                self.acceleration -= 0.8
-            self.speed += self.acceleration * self.t
-            self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
-
+            self.acceleration -= 0.8
+ 
         elif action == 'decelerate_1.0' or action == 12:
-            if self.acceleration > -8:
-                self.acceleration -= 1.0
-            self.speed += self.acceleration * self.t
-            self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
+            self.acceleration -= 1.0
+
+        if self.acceleration > 8:
+            self.acceleration = 8
+
+        if self.acceleration < -10:
+            self.acceleration = -10
+
+        self.speed += self.acceleration * self.t
+
+        if self.speed > 50:
+            self.speed = 50
+        if self.speed < 5:
+            self.speed = 5
+
+        self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
+
 
     def DTact(self, action):
         if action == 'maintain' or action == 0:
@@ -149,7 +135,7 @@ class HighwayEnv(gym.Env):
         self.car_width = 2.0 # width of the ego car
         self.lane_width = 4.0 # width of each lane
         self.num_lanes = 4 # number of lanes
-        self.num_obstacles = 9
+        self.num_obstacles = 25
         self.min_speed = 0.0 # minimum speed limit
         self.max_speed = 50.0 # maximum speed limit
         self.max_acceleration = 2.0 # maximum acceleration
@@ -172,8 +158,10 @@ class HighwayEnv(gym.Env):
         # Define the action and observation spaces
         self.action_space = spaces.Discrete(13)
         
-        self.observation_space = gym.spaces.Box(low=np.array([0, 0, 0, -np.inf, 0, 0, -1, -np.inf, 0, 0, -1, -np.inf, 0, 0, -1, -np.inf, 0, 0, -1, -np.inf, 0, 0, -1]), 
-                                    high=np.array([1, 1, 1, np.inf, 1, 1, 1, np.inf, 1, 1, 1, np.inf, 1, 1, 1, np.inf, 1, 1, 1, np.inf, 1, 1, 1]), 
+        low = np.array([0, 0, 0, -np.inf, 0, -1, -np.inf, 0, -1, 0, 0])
+        high = np.array([1, 1, 1, np.inf, 1, 1, np.inf, 1, 1, 1, 1])
+        self.observation_space = gym.spaces.Box(low=low, 
+                                    high=high, 
                                     dtype=np.float32)
 
     def reset(self):
@@ -182,7 +170,7 @@ class HighwayEnv(gym.Env):
         self.manager = RoadManager(self.num_lanes)
 
         # Initialize the ego
-        self.ego = Vehicle(position=0, speed=np.random.randint(30, 50), acceleration=0, lane=np.random.randint(0, self.num_lanes), sign='none', target_speed=50)
+        self.ego = Vehicle(position=100, speed=np.random.randint(30, 50), acceleration=0, lane=np.random.randint(0, self.num_lanes), sign='none', target_speed=50)
         
         self.manager.add(self.ego)
         
@@ -192,13 +180,13 @@ class HighwayEnv(gym.Env):
         for i in range(self.num_obstacles):
             FEASIBLE = False
             while not FEASIBLE:
-                position = np.random.uniform(0, 100)
+                position = np.random.uniform(0, 200)
                 lane = np.random.randint(0, self.num_lanes)
 
                 # If the generated obstacle does not collide with the ego and other vehicles, considered FEASIBLE
-                if (abs(position - self.ego.position) > 10 or lane != self.ego.lane):
+                if (abs(position - self.ego.position) > 15 or lane != self.ego.lane):
                     for o in self.obstacles:
-                        if abs(position - o.position) <= 10 and lane == o.lane:
+                        if abs(position - o.position) <= 15 and lane == o.lane:
                             FEASIBLE = False
                             break
                     else:
@@ -209,7 +197,8 @@ class HighwayEnv(gym.Env):
 
             self.manager.add(obstacle)
         # Get nearest obstacles
-        self.nearest_obstacles = sorted(self.obstacles, key=lambda o: (self.ego.position-o.position)**2 + 9*(self.ego.lane-o.lane)**2, reverse=False)[:5]
+        self.nearest_obstacles = sorted(self.manager.holding_system[self.ego.lane], key = lambda o: abs(self.ego.position-o.position))
+        # self.nearest_obstacles = sorted(self.obstacles, key=lambda o: (self.ego.position-o.position)**2 + 9*(self.ego.lane-o.lane)**2, reverse=False)[:5]
         return self._get_observation()
 
     def step(self, action):
@@ -254,10 +243,10 @@ class HighwayEnv(gym.Env):
                     if 0 < o.position - obstacle.position < 25: # Too close
                         dangerObs.append(o)
 
-                    if len(dangerObs)>0:
+                    if len(dangerObs) > 0:
                         obs_ahead = min(dangerObs, key=lambda obs:obs.position)
 
-                        if obs_ahead.speed - 5 < obstacle.speed:
+                        if obs_ahead.speed - 3 < obstacle.speed:
                             distance = obs_ahead.position - obstacle.position
                             deceleration = -(obstacle.speed - obs_ahead.speed)**2/(2*(distance))
                             if distance < 8:
@@ -323,15 +312,20 @@ class HighwayEnv(gym.Env):
                 obstacle.DTact('maintain')
             #  --------------------- Decision Tree Ends Here------------------------
 
-        self.nearest_obstacles = sorted(self.obstacles, key=lambda o: (self.ego.position-o.position)**2 + 9*(self.ego.lane-o.lane)**2, reverse=False)[:5]
-
+        # self.nearest_obstacles = sorted(self.obstacles, key=lambda o: (self.ego.position-o.position)**2 + 9*(self.ego.lane-o.lane)**2, reverse=False)[:5]
+        if self.ego.lane < 0:
+            self.nearest_obstacles = sorted(self.manager.holding_system[self.ego.lane+1], key = lambda o: abs(self.ego.position-o.position))
+        elif self.ego.lane > 3:
+            self.nearest_obstacles = sorted(self.manager.holding_system[self.ego.lane-1], key = lambda o: abs(self.ego.position-o.position))
+        else:
+            self.nearest_obstacles = sorted(self.manager.holding_system[self.ego.lane], key = lambda o: abs(self.ego.position-o.position))
         done = False
         # Check for collisions between the ego and the boundary
         
         if self.ego.lane < 0 or self.ego.lane > 3:
             # print(f"Ego's lane: {self.ego.lane}")
             print(f"Boundary Collision at timestep {self.time_step}")
-            reward = -100
+            reward = -40
             done = True 
 
         # Check for collisions between the ego car and obstacles
@@ -339,18 +333,18 @@ class HighwayEnv(gym.Env):
             for obstacle in self.obstacles:
                 if obstacle.lane == self.ego.lane and abs(obstacle.position - self.ego.position) < self.car_length:
                     print(f"Obs Collision at timestep {self.time_step}")
-                    reward = -100
+                    reward = -100000000
                     done = True
                     break
 
         # Reward the ego car for maintaining speed and changing lanes
         if not done:
-            reward = self.ego.speed/self.max_speed/100
+            reward = self.ego.speed / self.max_speed / 25 if self.ego.speed < self.max_speed else (2 - self.ego.speed / self.max_speed / 25)
             # reward = 0
-            if action == 0 or action == 1:
-                reward -= 0.1
+            if action == 1 or action == 2:
+                reward = -0.5
 
-        if self.time_step > 1800:
+        if self.time_step > 300:
             done = True
 
         # Return the observation, reward, done flag, and additional info
@@ -359,10 +353,24 @@ class HighwayEnv(gym.Env):
     
     def _get_observation(self):
         # Get the state of the ego car and obstacles
-        observation = [self.ego.speed/self.max_speed, (self.ego.acceleration+6)/16, (self.ego.lane+1)/4]
-        for x in self.nearest_obstacles:
-            observation.extend([(self.ego.position-x.position)**2 + 9*(self.ego.lane-x.lane)**2, \
-                                    x.speed/self.max_speed, x.lane/3, x.sign])
+        observation = [self.ego.speed/self.max_speed, (self.ego.acceleration+8)/18, self.ego.lane/3]
+        if len(self.nearest_obstacles) == 1:
+            observation.extend([200, 0.5, 0, 200, 0.5, 0])
+        elif len(self.nearest_obstacles) == 2:
+                observation.extend([200, 0.5, 0, self.ego.position-self.nearest_obstacles[1].position, self.nearest_obstacles[1].speed/self.max_speed, self.nearest_obstacles[1].sign])
+        else:
+            for x in self.nearest_obstacles[1:3]:
+                observation.extend([self.ego.position-x.position, x.speed/self.max_speed, x.sign])
+        for lane in (self.ego.lane-1, self.ego.lane+1):
+            if lane < 0 or lane > 3:
+                 observation.extend([0])
+            else:
+                NOTFEASIBLE = 0
+                for nearbyObs in self.manager.holding_system[lane]:
+                    if abs(nearbyObs.position - self.ego.position) < 6:
+                        NOTFEASIBLE = 1
+                observation.extend([NOTFEASIBLE]) 
+
         observation = np.array(observation, dtype=np.float32)
         # print(f"Shape of returned _get_observation: {observation.shape}")
         # print(f"returned _get_observation: {observation}")
@@ -405,7 +413,7 @@ class HighwayEnv(gym.Env):
                     self.ax.add_patch(arrow)
 
             # Plot nearest obstacles
-            for obstacle in self.nearest_obstacles:
+            for obstacle in self.nearest_obstacles[1:]:
                 obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, -2-obstacle.lane * self.lane_width - self.car_width / 2),
                                                      self.car_length, self.car_width, fc='g', label='Nearest Obstacle')
                 self.ax.add_patch(obstacle_vehicle)
@@ -418,22 +426,27 @@ class HighwayEnv(gym.Env):
             # Set legend
             # ax.legend()
 
-            plt.title(f'Step: {self.time_step}, Speed: {self.ego.speed:.2f}, Lane: {self.ego.lane}')
+            action_dict = {'None': 'None', 0: 'maintain',1: 'changeLaneR',2: 'changeLaneL',3: 'accelerate_0.05',
+                   4: 'accelerate_0.1',5: 'accelerate_0.2',6: 'accelerate_0.3',7: 'accelerate_0.4',8: 'decelerate_0.2',
+                   9: 'decelerate_0.4',10: 'decelerate_0.6',11: 'decelerate_0.8',12: 'decelerate_1.0'}
+   
+
+            plt.title(f'Ego action:{action_dict[self.ego.action_viz]}\nStep: {self.time_step}, Speed: {self.ego.speed:.2f}, Lane: {self.ego.lane}')
             # plt.show(block=False)
             plt.pause(0.01)
 
             # Update the environment for one time step
-            observation, reward, done, info = self.step(0)
+            # observation, reward, done, info = self.step(0)
 
-            self.time_step += 1
+            # self.time_step += 1
 
             # Check if the episode is over
-            if self.time_step >= self.max_time_step or done:
-                self.reset()
-                return
+            # if self.time_step >= self.max_time_step or done:
+            #     self.reset()
+            #     return
 
             # Render the updated visualization
-            self.render()
+            # self.render()
 
 if __name__=='__main__':
     env = HighwayEnv()
@@ -441,12 +454,12 @@ if __name__=='__main__':
     # env.reset()
     plt.show(block=False)
     env.render()
-    for i in range(len(env.manager.holding_system)):
-        laneObs = []
-        for o in env.manager.holding_system[i]:
-            laneObs.append(o.position)
-        laneObs = sorted(laneObs)
-        print(f"At lane {i}, the positions of the obstacles are {laneObs}")
+    # for i in range(len(env.manager.holding_system)):
+    #     laneObs = []
+    #     for o in env.manager.holding_system[i]:
+    #         laneObs.append(o.position)
+    #     laneObs = sorted(laneObs)
+    #     print(f"At lane {i}, the positions of the obstacles are {laneObs}")
     # Print the initial state of the ego 
     # print(f"Timestep {env.time_step}:")
     # print(f"Ego's position:{env.ego.position}\nEgo's speed: {env.ego.speed}\nEgo's acc: {env.ego.acceleration}\nEgo's lane: {env.ego.lane}")
@@ -464,9 +477,9 @@ if __name__=='__main__':
     #     print(f"Nearest vehicle_{i}'s position:{obs.position}\nVehicle_{i}'s speed: {obs.speed}\nVehicle_{i}'s lane: {obs.lane}\n")
 
     print(f"Reward = {reward}, done = {done}")
-    for i in range(len(env.manager.holding_system)):
-        laneObs = []
-        for o in env.manager.holding_system[i]:
-            laneObs.append(o.position)
-        laneObs = sorted(laneObs)
-        print(f"At lane {i}, the positions of the obstacles are {laneObs}")
+    # for i in range(len(env.manager.holding_system)):
+    #     laneObs = []
+    #     for o in env.manager.holding_system[i]:
+    #         laneObs.append(o.position)
+    #     laneObs = sorted(laneObs)
+    #     print(f"At lane {i}, the positions of the obstacles are {laneObs}")

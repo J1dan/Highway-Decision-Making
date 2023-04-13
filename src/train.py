@@ -1,14 +1,14 @@
 import gym
-from decisionMaking import HighwayEnv
+from newDecisionMaking import HighwayEnv
 import stable_baselines3
-from stable_baselines3 import A2C
+from stable_baselines3 import DQN
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.env_checker import check_env
 
 env = HighwayEnv()
-check_env(env)
+# check_env(env)
 
-model = A2C("MlpPolicy", env, verbose=1)
+model = DQN("MlpPolicy", env, verbose=1)
 model.learn(total_timesteps=10000)
 model.save("model")
 print(f"Model saved")

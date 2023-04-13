@@ -35,60 +35,80 @@ class Vehicle:
         elif action == 'accelerate_0.05' or action == 3:
             if self.acceleration < 8:     
                 self.acceleration += 0.05
+            if self.acceleration > 8:
+                self.acceleration = 8
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
 
         elif action == 'accelerate_0.1' or action == 4:
             if self.acceleration < 8: 
                 self.acceleration += 0.1
+            if self.acceleration > 8:
+                self.acceleration = 8
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
 
         elif action == 'accelerate_0.2' or action == 5:
             if self.acceleration < 8: 
                 self.acceleration += 0.2
+            if self.acceleration > 8:
+                self.acceleration = 8
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
 
         elif action == 'accelerate_0.3' or action == 6:
             if self.acceleration < 8: 
                 self.acceleration += 0.3
+            if self.acceleration > 8:
+                self.acceleration = 8
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
 
         elif action == 'accelerate_0.4' or action == 7:
             if self.acceleration < 8: 
                 self.acceleration += 0.4
+            if self.acceleration > 8:
+                self.acceleration = 8
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
 
         elif action == 'decelerate_0.2' or action == 8:
             if self.acceleration > -10: 
                 self.acceleration -= 0.2
+            if self.acceleration < -10:
+                self.acceleration = -10
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
 
         elif action == 'decelerate_0.4' or action == 9:
             if self.acceleration > -10:
                 self.acceleration -= 0.4
+            if self.acceleration < -10:
+                self.acceleration = -10
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
 
         elif action == 'decelerate_0.6' or action == 10:
             if self.acceleration > -10:
                 self.acceleration -= 0.6
+            if self.acceleration < -10:
+                self.acceleration = -10
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
 
         elif action == 'decelerate_0.8' or action == 11:
             if self.acceleration > -10:
                 self.acceleration -= 0.8
+            if self.acceleration < -10:
+                self.acceleration = -10
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
 
         elif action == 'decelerate_1.0' or action == 12:
             if self.acceleration > -8:
                 self.acceleration -= 1.0
+            if self.acceleration < -10:
+                self.acceleration = -10
             self.speed += self.acceleration * self.t
             self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
 
@@ -254,10 +274,10 @@ class HighwayEnv(gym.Env):
                     if 0 < o.position - obstacle.position < 25: # Too close
                         dangerObs.append(o)
 
-                    if len(dangerObs)>0:
+                    if len(dangerObs) > 0:
                         obs_ahead = min(dangerObs, key=lambda obs:obs.position)
 
-                        if obs_ahead.speed - 5 < obstacle.speed:
+                        if obs_ahead.speed - 3 < obstacle.speed:
                             distance = obs_ahead.position - obstacle.position
                             deceleration = -(obstacle.speed - obs_ahead.speed)**2/(2*(distance))
                             if distance < 8:

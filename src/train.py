@@ -10,7 +10,7 @@ env = HighwayEnv()
 # check_env(env)
 
 model = DQN("MlpPolicy", env, verbose=1)
-model.learn(total_timesteps=1)
+model.learn(total_timesteps=100000)
 model.save("model")
 print(f"Model saved")
 # del model

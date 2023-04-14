@@ -405,65 +405,70 @@ class HighwayEnv(gym.Env):
         # print(f"Shape of returned _get_observation: {observation.shape}")
         # print(f"returned _get_observation: {observation}")
         return observation
-    
+ 
     def render(self, mode='human'):
         if mode == 'human':
             # fig, ax = plt.subplots(figsize=(10, 5))
             plt.cla()
+            # stopping simulation with the esc key.
+            plt.gcf().canvas.mpl_connect(
+                'key_release_event',
+                lambda event: [exit(0) if event.key == 'escape' else None])
 
-            self.ax.set_xlim([self.ego.position-10, self.ego.position+100])
-            self.ax.set_ylim([-(self.num_lanes * self.lane_width), 0])
+            self.ax.set_xlim([self.ego.position-20, self.ego.position+100])
+            self.ax.set_ylim([0, (self.num_lanes * self.lane_width)])
             self.ax.set_xlabel('Position')
             self.ax.set_ylabel('Lane')
             self.ax.set_facecolor('#d3d3d3')  # Set the background color to grey
             self.ax.set_aspect('equal')
             for i in range(self.num_lanes):  # draw lane line
-                y = -i * self.lane_width
+                y = i * self.lane_width
                 self.ax.axhline(y=y, color='w', linestyle='--')
 
             # Plot ego vehicle
-            ego_vehicle = patches.Rectangle((self.ego.position - self.car_length / 2, -2-self.ego.lane * self.lane_width - self.car_width / 2),
+            ego_vehicle = patches.Rectangle((self.ego.position - self.car_length / 2, 2 + self.ego.lane * self.lane_width - self.car_width / 2),
                                              self.car_length, self.car_width, fc='b', label='Ego Vehicle')
             self.ax.add_patch(ego_vehicle)
 
             # Plot obstacles
             for obstacle in self.obstacles:
-                obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, -2-obstacle.lane * self.lane_width - self.car_width / 2),
+                obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, 2 + obstacle.lane * self.lane_width - self.car_width / 2),
                                                      self.car_length, self.car_width, fc='r', label='Obstacle')
                 self.ax.add_patch(obstacle_vehicle)
-                if obstacle.sign == 1: # Change lane to right
-                    arrow = patches.Arrow(obstacle.position - self.car_length / 4,  -2-obstacle.lane * self.lane_width, 0, -2, width=1, color='yellow')
+                if obstacle.sign == 1: # Change lane to left
+                    arrow = patches.Arrow(obstacle.position - self.car_length / 4,  2 + obstacle.lane * self.lane_width, 0, 2, width=1, color='yellow')
                     self.ax.add_patch(arrow)
                 if obstacle.sign == -1: # Change lane to right
-                    arrow = patches.Arrow(obstacle.position - self.car_length / 4,  -2-obstacle.lane * self.lane_width, 0, 2, width=1, color='yellow')
+                    arrow = patches.Arrow(obstacle.position - self.car_length / 4,  2 + obstacle.lane * self.lane_width, 0, -2, width=1, color='yellow')
                     self.ax.add_patch(arrow)
 
             # Plot nearest obstacles
             for obstacle in self.nearest_obstacles_ahead[:]:
                 if len(self.nearest_obstacles_ahead) > 0:
-                    obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, -2-obstacle.lane * self.lane_width - self.car_width / 2),
+                    obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, 2 + obstacle.lane * self.lane_width - self.car_width / 2),
                                                             self.car_length, self.car_width, fc='g', label='Nearest Obstacle')
                     self.ax.add_patch(obstacle_vehicle)
-                    if obstacle.sign == 1: # Change lane to right
-                        arrow = patches.Arrow(obstacle.position - self.car_length / 4,  -2-obstacle.lane * self.lane_width, 0, -2, width=1, color='yellow')
+                    if obstacle.sign == 1: # Change lane to left
+                        arrow = patches.Arrow(obstacle.position - self.car_length / 4,  2 + obstacle.lane * self.lane_width, 0, 2, width=1, color='yellow')
                         self.ax.add_patch(arrow)
                     if obstacle.sign == -1: # Change lane to right
-                        arrow = patches.Arrow(obstacle.position - self.car_length / 4,  -2-obstacle.lane * self.lane_width, 0, 2, width=1, color='yellow')
+                        arrow = patches.Arrow(obstacle.position - self.car_length / 4,  2 + obstacle.lane * self.lane_width, 0, -2, width=1, color='yellow')
                         self.ax.add_patch(arrow)
                     break
 
             for obstacle in self.nearest_obstacles_behind[:]:
                 if len(self.nearest_obstacles_behind) > 0:
-                    obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, -2-obstacle.lane * self.lane_width - self.car_width / 2),
+                    obstacle_vehicle = patches.Rectangle((obstacle.position - self.car_length / 2, 2 + obstacle.lane * self.lane_width - self.car_width / 2),
                                                         self.car_length, self.car_width, fc='g', label='Nearest Obstacle')
                     self.ax.add_patch(obstacle_vehicle)
-                    if obstacle.sign == 1: # Change lane to right
-                        arrow = patches.Arrow(obstacle.position - self.car_length / 4,  -2-obstacle.lane * self.lane_width, 0, -2, width=1, color='yellow')
+                    if obstacle.sign == 1: # Change lane to left
+                        arrow = patches.Arrow(obstacle.position - self.car_length / 4,  2 + obstacle.lane * self.lane_width, 0, 2, width=1, color='yellow')
                         self.ax.add_patch(arrow)
                     if obstacle.sign == -1: # Change lane to right
-                        arrow = patches.Arrow(obstacle.position - self.car_length / 4,  -2-obstacle.lane * self.lane_width, 0, 2, width=1, color='yellow')
+                        arrow = patches.Arrow(obstacle.position - self.car_length / 4,  2 + obstacle.lane * self.lane_width, 0, -2, width=1, color='yellow')
                         self.ax.add_patch(arrow)    
                     break       
+
             # Set legend
             # ax.legend()
 

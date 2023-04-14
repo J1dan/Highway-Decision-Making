@@ -56,7 +56,7 @@ class Vehicle:
         #     self.acceleration += 0.3
 
         elif action == 'accelerate_0.8' or action == 3:
-            self.acceleration = 5
+            self.acceleration = 4
 
         # elif action == 'decelerate_0.2' or action == 8:
         #     self.acceleration -= 0.2
@@ -73,8 +73,8 @@ class Vehicle:
         # elif action == 'decelerate_1.0' or action == 12:
         #     self.acceleration -= 1.0
 
-        if self.acceleration > 8:
-            self.acceleration = 8
+        if self.acceleration > 4:
+            self.acceleration = 4
 
         if self.acceleration < -10:
             self.acceleration = -10
@@ -151,6 +151,7 @@ class HighwayEnv(gym.Env):
         self.max_deceleration = 5.0 # maximum deceleration
         self.max_lane_change = 1 # maximum number of lanes that can be changed at once
         self.time_step = 0
+        self.time_steps = []
         self.t = 0.1
         self.max_time_step = 1200
         self.obstacle_speeds = [20, 30, 40]
@@ -340,7 +341,7 @@ class HighwayEnv(gym.Env):
         if self.ego.lane < 0 or self.ego.lane > 3:
             # print(f"Ego's lane: {self.ego.lane}")
             print(f"Boundary Collision at timestep {self.time_step}")
-            reward = -40
+            reward = -100
             done = True 
 
         # Check for collisions between the ego car and obstacles
@@ -348,31 +349,40 @@ class HighwayEnv(gym.Env):
             for obstacle in self.obstacles:
                 if obstacle.lane == self.ego.lane and abs(obstacle.position - self.ego.position) < self.car_length:
                     print(f"Obs Collision at timestep {self.time_step}")
-                    reward = -100000000
+                    # self.time_steps.append(self.time_step)
+                    # print(f"Mean {np.mean(self.time_steps)} timesteps")
+                    reward = -10000
                     done = True
                     break
 
         # Reward the ego car for maintaining speed and changing lanes
         if not done:
             reward = self.ego.speed / self.ego.target_speed if self.ego.speed < self.ego.target_speed else (2 - self.ego.speed / self.ego.target_speed)
-            reward /= 15
-            if abs(self.ego.speed - self.ego.target_speed) < 1:
-                reward += 5
+            reward /= 30
+            # if abs(self.ego.speed - self.ego.target_speed) < 1:
+            #     reward += 1
+            
+            if obstacle.lane == self.ego.lane and abs(obstacle.position - self.ego.position) < 25:
+                reward -= 25 - abs(obstacle.position - self.ego.position)
 
             if action == 1 or action == 2:
                 if self.time_step - self.ego.last_signtime < 15:
                     if self.ego.last_signtime != -1:
                         reward += 5/(self.ego.last_signtime - self.time_step)
-                reward += 0.15
+                reward -= 1
 
             if self.ego.speed == self.max_speed and action == 'accelerate_0.8':
-                reward -= 1
+                reward -= 10
+            
 
         if self.time_step > 150:
             done = True
 
         # Return the observation, reward, done flag, and additional info
         observation = self._get_observation()
+
+        if self.ego.speed >= observation[4] and action == 'accelerate_0.8':
+                reward -= 10
 
         if self.ego.CHANGELANE:
             self.ego.last_signtime = self.time_step

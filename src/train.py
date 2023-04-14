@@ -21,7 +21,7 @@ print(f"Mean reward = {mean_reward}, std_reward = {std_reward}")
 
 vec_env = model.get_env()
 obs = vec_env.reset()
-for i in range(1000):
+for i in range(2000):
     action, _state = model.predict(obs, deterministic=True)
     obs, reward, done, info = vec_env.step(action)
     vec_env.render()

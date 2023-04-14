@@ -483,19 +483,6 @@ class HighwayEnv(gym.Env):
             # plt.show(block=False)
             plt.pause(0.01)
 
-            # Update the environment for one time step
-            # observation, reward, done, info = self.step(0)
-
-            # self.time_step += 1
-
-            # Check if the episode is over
-            # if self.time_step >= self.max_time_step or done:
-            #     self.reset()
-            #     return
-
-            # Render the updated visualization
-            # self.render()
-
 if __name__=='__main__':
     env = HighwayEnv()
     

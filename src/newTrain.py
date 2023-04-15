@@ -17,7 +17,8 @@ from utility import viz
 log_dir = "log/"
 env = HighwayEnv()
 
-method = 'DQN' # 'DQN', 'A2C', 'PPO', 'RecurrentPPO'
-model = train(method, env, 2e5, log_dir, 0) 
+method = 'PPO' # 'DQN', 'A2C', 'PPO', 'RecurrentPPO'
+CONTINUE = True # Continue learning
+model = train(method, env, 5e3, log_dir, verbose=0, continual=CONTINUE, force_update=1) 
 
 viz(model, env, method)

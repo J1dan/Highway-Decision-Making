@@ -339,7 +339,7 @@ class HighwayEnv(gym.Env):
         
         if self.ego.lane < 0 or self.ego.lane > 3:
             # print(f"Ego's lane: {self.ego.lane}")
-            print(f"Boundary Collision at timestep {self.time_step}")
+            # print(f"Boundary Collision at timestep {self.time_step}")
             reward = -40
             done = True 
 
@@ -347,8 +347,8 @@ class HighwayEnv(gym.Env):
         if not done:
             for obstacle in self.obstacles:
                 if obstacle.lane == self.ego.lane and abs(obstacle.position - self.ego.position) < self.car_length:
-                    print(f"Obs Collision at timestep {self.time_step}")
-                    reward = -100000000
+                    # print(f"Obs Collision at timestep {self.time_step}")
+                    reward = -100
                     done = True
                     break
 
@@ -468,18 +468,12 @@ class HighwayEnv(gym.Env):
                         arrow = patches.Arrow(obstacle.position - self.car_length / 4,  2 + obstacle.lane * self.lane_width, 0, -2, width=1, color='yellow')
                         self.ax.add_patch(arrow)    
                     break       
-
-            # Set legend
-            # ax.legend()
-
-            # action_dict = {'None': 'None', 0: 'maintain',1: 'changeLaneR',2: 'changeLaneL',3: 'accelerate_0.05',
-            #        4: 'accelerate_0.1',5: 'accelerate_0.2',6: 'accelerate_0.3',7: 'accelerate_0.4',8: 'decelerate_0.2',
-            #        9: 'decelerate_0.4',10: 'decelerate_0.6',11: 'decelerate_0.8',12: 'decelerate_1.0'}
+            
+            action_idx = int(self.ego.action_viz) if self.ego.action_viz is not 'None' else 'None'
             action_dict = {'None': 'None', 0: 'maintain',1: 'changeLaneR',2: 'changeLaneL',3: 'accelerate_0.08',
                    4: 'decelerate_1.0'}
-   
 
-            plt.title(f'Ego action:{action_dict[self.ego.action_viz]}\nStep: {self.time_step}, Speed: {self.ego.speed:.2f}, Lane: {self.ego.lane}')
+            plt.title(f'Ego action:{action_dict[action_idx]}\nStep: {self.time_step}, Speed: {self.ego.speed:.2f}, Lane: {self.ego.lane}')
             # plt.show(block=False)
             plt.pause(0.01)
 

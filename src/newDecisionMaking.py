@@ -390,9 +390,10 @@ class HighwayEnv(gym.Env):
         if not done:
             reward = 5 * self.ego.speed / self.ego.target_speed if self.ego.speed < self.ego.target_speed else (10 - 5 * self.ego.speed / self.ego.target_speed)
             reward -= 4.8
-            if self.ego.speed == self.ego.target_speed:
-                reward += 10
+            if abs(self.ego.speed - self.ego.target_speed) < 0.3:
+                reward += 15
             reward /= 10
+            print(reward)
 
             if action == 0:
                 reward += 0.03

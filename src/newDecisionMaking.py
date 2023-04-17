@@ -431,7 +431,7 @@ class HighwayEnv(gym.Env):
 
         for lane in (self.ego.lane-1, self.ego.lane+1):
             if lane < 0 or lane > 3:
-                observation.extend([0])
+                observation.extend([1])
             else:
                 NOTFEASIBLE = 0
                 for nearbyObs in self.manager.holding_system[lane]:

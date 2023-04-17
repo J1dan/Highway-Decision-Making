@@ -355,8 +355,8 @@ class HighwayEnv(gym.Env):
         # Reward the ego car for maintaining speed and changing lanes
         if not done:
             reward = self.ego.speed / self.ego.target_speed if self.ego.speed < self.ego.target_speed else (2 - self.ego.speed / self.ego.target_speed)
-            reward /= 15
-            if abs(self.ego.speed - self.ego.target_speed) < 1:
+            reward -= 8/9
+            if abs(self.ego.speed - self.ego.target_speed) <= 0.4:
                 reward += 5
 
             if action == 1 or action == 2:

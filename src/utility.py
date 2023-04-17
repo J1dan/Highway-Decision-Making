@@ -79,9 +79,9 @@ def train(method, env, timesteps, log_dir, verbose, continual, force_update):
             callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir, best_mean_reward=best_mean_reward)
             model = DQN.load(log_dir+"/best_model.zip", env=env)
             # model.set_env(env)
-            model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False)
+            model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False, tb_log_name=log_dir)
         else:
-            callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
+            callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir, tb_log_name=log_dir)
             model = DQN("MlpPolicy", env, verbose=verbose)
             model.learn(total_timesteps=timesteps, callback=callback)
     elif method == 'A2C':
@@ -128,7 +128,7 @@ def train(method, env, timesteps, log_dir, verbose, continual, force_update):
             else:
                 best_mean_reward = np.load(log_dir + "/best_model/best_mean_reward.npy")  # Load the best mean reward from the saved model
             callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir, best_mean_reward=best_mean_reward)
-            model = RecurrentPPO.load(log_dir+"/best_model.zip", env=env)
+            model = RecurrentPPO.load(log_dir+"/best_model.zip", env=env, tensorboard_log=log_dir)
             # model.set_env(env)
             model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False)
         else:

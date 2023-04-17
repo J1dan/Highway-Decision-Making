@@ -81,7 +81,7 @@ def train(method, env, timesteps, log_dir, verbose, continual, force_update):
             # model.set_env(env)
             model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False, tb_log_name=log_dir)
         else:
-            callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir, tb_log_name=log_dir)
+            callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
             model = DQN("MlpPolicy", env, verbose=verbose)
             model.learn(total_timesteps=timesteps, callback=callback)
     elif method == 'A2C':

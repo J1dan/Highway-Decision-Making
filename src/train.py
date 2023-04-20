@@ -22,13 +22,13 @@ env = HighwayEnv()
 #     verbose=1,
 # )
 
-# model.learn(total_timesteps=100000)
-# model.save("model3")
+# model.learn(total_timesteps=1000000)
+# model.save("model")
 # print(f"Model saved")
 
 # del model
 # model = DQN.load("log/best_model.zip", env=env)
-model = DQN.load("model3", env=env)
+model = DQN.load("model5", env=env)
 
 mean_reward, std_reward = evaluate_policy(model, model.get_env(), n_eval_episodes=40)
 print(f"Mean reward = {mean_reward}, std_reward = {std_reward}")

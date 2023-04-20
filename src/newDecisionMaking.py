@@ -412,9 +412,6 @@ class HighwayEnv(gym.Env):
         # Return the observation, reward, done flag, and additional info
         observation = self._get_observation()
 
-        # if (self.ego.speed/55) >= observation[5] and action == 'accelerate_0.8':
-        #     reward -= 10
-
         if observation[4] < 25:
             reward -= (25 - observation[4])/5
 

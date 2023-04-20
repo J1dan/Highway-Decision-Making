@@ -402,7 +402,6 @@ class HighwayEnv(gym.Env):
                     reward += 0.001
             
         if self.time_step > 150:
-            # reward += 10000
             done = True
 
         # Return the observation, reward, done flag, and additional info

@@ -374,7 +374,7 @@ class HighwayEnv(gym.Env):
         if self.ego.lane < 0 or self.ego.lane > 3:
             # print(f"Ego's lane: {self.ego.lane}")
             print(f"Boundary Collision at timestep {self.time_step}")
-            reward = -10
+            reward = -1000
             done = True 
 
         # Check for collisions between the ego car and obstacles
@@ -384,32 +384,36 @@ class HighwayEnv(gym.Env):
                     print(f"Obs Collision at timestep {self.time_step}")
                     # self.time_steps.append(self.time_step)
                     # print(f"Mean {np.mean(self.time_steps)} timesteps")
-                    reward = -100
+                    reward = -10000
                     done = True
                     break
             
         # Reward the ego car for maintaining speed and changing lanes
         if not done:
-        
-            reward = - 0.002 * ((self.ego.speed - self.ego.target_speed)**2) + 0.1
-          
+            # reward = self.ego.speed / self.ego.target_speed if self.ego.speed < self.ego.target_speed else (2 - self.ego.speed / self.ego.target_speed)
+            # reward /= 15
+            reward = - 0.2 * ((self.ego.speed - self.ego.target_speed)**2) + 8
+            
+            # if abs(self.ego.speed - self.ego.target_speed) < 1:
+            #     reward += 5
+
             if action == 1 or action == 2:
                 if self.time_step - self.ego.last_signtime < 15:
                     if self.ego.last_signtime != -1:
-                        reward += 0.05/(self.ego.last_signtime - self.time_step)
-
+                        reward += 5/(self.ego.last_signtime - self.time_step)
+            # if self.ego.speed == self.max_speed and action == 'accelerate_0.8':
+            #     reward -= 10
                 else:
-                    reward += 0.001
+                    reward += 0.1
             
         if self.time_step > 150:
-            # reward += 10000
             done = True
 
         # Return the observation, reward, done flag, and additional info
         observation = self._get_observation()
 
         if observation[4] < 25:
-            reward -= 0.01 * (25 - observation[4])/5
+            reward -= (25 - observation[4])/5
 
         if self.ego.CHANGELANE:
             self.ego.last_signtime = self.time_step
@@ -525,10 +529,35 @@ class HighwayEnv(gym.Env):
 if __name__=='__main__':
     env = HighwayEnv()
     
+    # env.reset()
     plt.show(block=False)
     env.render()
-   
+    # for i in range(len(env.manager.holding_system)):
+    #     laneObs = []
+    #     for o in env.manager.holding_system[i]:
+    #         laneObs.append(o.position)
+    #     laneObs = sorted(laneObs)
+    #     print(f"At lane {i}, the positions of the obstacles are {laneObs}")
+    # Print the initial state of the ego 
+    # print(f"Timestep {env.time_step}:")
+    # print(f"Ego's position:{env.ego.position}\nEgo's speed: {env.ego.speed}\nEgo's acc: {env.ego.acceleration}\nEgo's lane: {env.ego.lane}")
+    # Print the initial state of the obstacles
+
+    # for i in range(len(env.obstacles)):
+    #     obs = env.obstacles[i]
+    #     print(f"Vehicle_{i}'s position:{obs.position}\nVehicle_{i}'s speed: {obs.speed}\nVehicle_{i}'s lane: {obs.lane}")
+
     obs, reward, done, _ = env.step(('maintain', 0))
+    # print(f"Timestep {env.time_step}:")
+    # print(f"Ego's position:{env.ego.position}\nEgo's speed: {env.ego.speed}\nEgo's acc: {env.ego.acceleration}\nEgo's lane: {env.ego.lane}\n")
+    # for i in range(len(env.nearest_obstacles)):
+    #     obs = env.nearest_obstacles[i]
+    #     print(f"Nearest vehicle_{i}'s position:{obs.position}\nVehicle_{i}'s speed: {obs.speed}\nVehicle_{i}'s lane: {obs.lane}\n")
 
     print(f"Reward = {reward}, done = {done}")
- 
+    # for i in range(len(env.manager.holding_system)):
+    #     laneObs = []
+    #     for o in env.manager.holding_system[i]:
+    #         laneObs.append(o.position)
+    #     laneObs = sorted(laneObs)
+    #     print(f"At lane {i}, the positions of the obstacles are {laneObs}")

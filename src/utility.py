@@ -116,7 +116,8 @@ def train(method, env, timesteps, log_dir, verbose, continual, force_update):
             model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False)
         else:
             callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
-            model = PPO("MlpPolicy", env, verbose=verbose)
+            policy_kwargs = dict(net_arch=[dict(pi=[128, 128], vf=[128, 128])])
+            model = PPO("MlpPolicy", env, policy_kwargs=policy_kwargs, verbose=0)
             model.learn(total_timesteps=timesteps, callback=callback)
     elif method == 'RecurrentPPO':
         log_dir += method

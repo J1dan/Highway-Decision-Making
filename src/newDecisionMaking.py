@@ -56,7 +56,7 @@ class Vehicle:
         #     self.acceleration += 0.3
 
         elif action == 'accelerate_0.8' or action == 3:
-            self.acceleration = 4
+            self.acceleration = 2
 
         # elif action == 'decelerate_0.2' or action == 8:
         #     self.acceleration -= 0.2
@@ -73,20 +73,21 @@ class Vehicle:
         # elif action == 'decelerate_1.0' or action == 12:
         #     self.acceleration -= 1.0
 
-        if self.acceleration > 4:
-            self.acceleration = 4
-
-        if self.acceleration < -10:
-            self.acceleration = -10
-
         noise = np.random.normal(0, 0.1)
         self.acceleration += noise
+
+        if self.acceleration > 2:
+            self.acceleration = 2
+
+        if self.acceleration < -5:
+            self.acceleration = -5
+
         self.speed += self.acceleration * self.t
 
         if self.speed > 55:
             self.speed = 55
-        if self.speed < 5:
-            self.speed = 5
+        # if self.speed < 5:
+        #     self.speed = 5
 
         self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
         self.time_step += 1
@@ -118,6 +119,11 @@ class Vehicle:
 
         noise = np.random.normal(0, 0.1)
         self.acceleration += noise
+        if self.acceleration > 2:
+            self.acceleration = 2
+
+        if self.acceleration < -5:
+            self.acceleration = -5
         self.speed += self.acceleration * self.t
         self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
 
@@ -151,14 +157,13 @@ class HighwayEnv(gym.Env):
         self.car_width = 2.0 # width of the ego car
         self.lane_width = 4.0 # width of each lane
         self.num_lanes = 4 # number of lanes
-        self.num_obstacles = 35
+        self.num_obstacles = 45
         self.min_speed = 0.0 # minimum speed limit
         self.max_speed = 55.0 # maximum speed limit
         self.max_acceleration = 2.0 # maximum acceleration
         self.max_deceleration = 5.0 # maximum deceleration
         self.max_lane_change = 1 # maximum number of lanes that can be changed at once
         self.time_step = 0
-        self.time_steps = []
         self.t = 0.1
         self.max_time_step = 1200
         self.obstacle_speeds = [20, 30, 40]
@@ -188,7 +193,7 @@ class HighwayEnv(gym.Env):
         self.manager = RoadManager(self.num_lanes)
 
         # Initialize the ego
-        self.ego = Vehicle(position=0, speed=np.random.randint(30, 50), acceleration=0, lane=np.random.randint(0, self.num_lanes), sign='none', target_speed=40)
+        self.ego = Vehicle(position=0, speed=np.random.randint(35, 45), acceleration=0, lane=np.random.randint(0, self.num_lanes), sign='none', target_speed=40)
         
         self.manager.add(self.ego)
         
@@ -240,7 +245,7 @@ class HighwayEnv(gym.Env):
                         obstacle.sign = 0
                         obstacle.signtime = -1
                         obstacle.DTact(0.1)
-                    elif obstacle.speed < obstacle.target_speed:
+                    elif obstacle.speed > obstacle.target_speed:
                         obstacle.sign = 0
                         obstacle.signtime = -1
                         obstacle.DTact(-0.1)           
@@ -284,7 +289,7 @@ class HighwayEnv(gym.Env):
                         if obs_ahead.speed - 3 < obstacle.speed:
                             distance = obs_ahead.position - obstacle.position
                             deceleration = -(obstacle.speed - obs_ahead.speed)**2/(2*(distance))
-                            if distance < 8:
+                            if distance < 15:
                                 obstacle.DTact(deceleration - 5)
                             else:
                                 obstacle.DTact(deceleration - 0.5)
@@ -342,7 +347,7 @@ class HighwayEnv(gym.Env):
                 obstacle.sign = 0
                 obstacle.signtime = -1
                 obstacle.DTact(0.1)
-            elif obstacle.speed < obstacle.target_speed:
+            elif obstacle.speed > obstacle.target_speed:
                 obstacle.sign = 0
                 obstacle.signtime = -1
                 obstacle.DTact(-0.1)           
@@ -369,7 +374,7 @@ class HighwayEnv(gym.Env):
         if self.ego.lane < 0 or self.ego.lane > 3:
             # print(f"Ego's lane: {self.ego.lane}")
             print(f"Boundary Collision at timestep {self.time_step}")
-            reward = -100
+            reward = -1000
             done = True 
 
         # Check for collisions between the ego car and obstacles
@@ -382,20 +387,28 @@ class HighwayEnv(gym.Env):
                     reward = -10000
                     done = True
                     break
-
+            
         # Reward the ego car for maintaining speed and changing lanes
         if not done:
-            reward = self.ego.speed / self.ego.target_speed if self.ego.speed < self.ego.target_speed else (2 - self.ego.speed / self.ego.target_speed)
-            reward /= 15
-            if abs(self.ego.speed - self.ego.target_speed) < 1:
-                reward += 5
+            # reward = self.ego.speed / self.ego.target_speed if self.ego.speed < self.ego.target_speed else (2 - self.ego.speed / self.ego.target_speed)
+            # reward /= 15
+            reward = - 0.2 * ((self.ego.speed - self.ego.target_speed)**2) + 8
+            
+            # if abs(self.ego.speed - self.ego.target_speed) < 1:
+            #     reward += 5
 
             if action == 1 or action == 2:
                 if self.time_step - self.ego.last_signtime < 15:
                     if self.ego.last_signtime != -1:
                         reward += 5/(self.ego.last_signtime - self.time_step)
-            if self.ego.speed == self.max_speed and action == 'accelerate_0.8':
-                reward -= 10
+            # if self.ego.speed == self.max_speed and action == 'accelerate_0.8':
+            #     reward -= 10
+                else:
+                    reward += 0.1
+            
+            if abs(obstacle.position - self.ego.position) < 25:
+                reward -= (25 - abs(obstacle.position - self.ego.position))/1.5
+
 
 
         if self.time_step > 150:
@@ -414,7 +427,7 @@ class HighwayEnv(gym.Env):
     
     def _get_observation(self):
         # Get the state of the ego car and obstacles
-        observation = [self.ego.speed/self.max_speed, (self.ego.acceleration+8)/18, self.ego.lane/3]
+        observation = [self.ego.speed/self.max_speed, (self.ego.acceleration+5)/7, self.ego.lane/3]
         if len(self.nearest_obstacles_ahead) == 0 and len(self.nearest_obstacles_behind) == 0:
             observation.extend([200, 0.5, 0, -200, 0.5, 0])
         elif len(self.nearest_obstacles_ahead) == 0:

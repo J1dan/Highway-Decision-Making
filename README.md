@@ -26,9 +26,17 @@ or
     conda activate dm
 ```
 
+FOR EXAMINERS:
+To visualize our trained model, simply run 
+```bash
+    train_viz.py --viz true --method DQN 
+``` for aggresive model that would overtake obstacles
+```bash
+    train_viz.py --viz true --method PPO 
+``` for conservative model that would remain at its original lane
+
 3. To visualize our trained model, put the models in the /log directory.
 ```bash
-    cd src
-    train_viz.py --viz true --method DQN
+    src/train_viz.py --viz true --method PPO
 ```
-You can select different methods here. Options: A2C, DQN, PPO, RecurrentPPO
+You can put different models and select the according method here. Options: A2C, DQN, PPO, RecurrentPPO

@@ -12,7 +12,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 
-from newDecisionMaking import HighwayEnv
+from DecisionMakingEnv import HighwayEnv
 
 
 class SaveOnBestTrainingRewardCallback(BaseCallback):

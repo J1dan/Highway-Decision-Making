@@ -1,5 +1,5 @@
 import numpy as np
-from newDecisionMaking import HighwayEnv as HighwayEnv_rl
+from DecisionMakingEnv import HighwayEnv as HighwayEnv_rl
 from EgoDecisionTree import HighwayEnv as HighwayEnv_dt
 from sb3_contrib import RecurrentPPO
 from stable_baselines3 import DQN, A2C, PPO

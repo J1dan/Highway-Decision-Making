@@ -5,7 +5,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from sb3_contrib import RecurrentPPO
 from stable_baselines3 import PPO, DQN, A2C
 
-from newDecisionMaking import HighwayEnv
+from DecisionMakingEnv import HighwayEnv
 from utility import train
 from utility import viz
 
@@ -22,16 +22,16 @@ env = HighwayEnv()
 
 if args.viz == 'true':
     if args.method == 'DQN':
-        model = DQN.load(log_dir+"/DQN/best_model.zip", env=env)
+        model = DQN.load(log_dir+"DQN/best_model.zip", env=env)
         viz(model, env, 'DQN')
     if args.method == 'A2C':
-        model = A2C.load(log_dir+"/A2C/best_model.zip", env=env)
+        model = A2C.load(log_dir+"A2C/best_model.zip", env=env)
         viz(model, env, 'A2C')
     if args.method == 'PPO':
-        model = PPO.load(log_dir+"/PPO/best_model.zip", env=env)
+        model = PPO.load(log_dir+"PPO/best_model.zip", env=env)
         viz(model, env, 'PPO')
     if args.method == 'RecurrentPPO':  
-        model = RecurrentPPO.load(log_dir+"/RecurrentPPO/best_model.zip", env=env)
+        model = RecurrentPPO.load(log_dir+"RecurrentPPO/best_model.zip", env=env)
         viz(model, env, 'RecurrentPPO')
 else:
     method = args.method

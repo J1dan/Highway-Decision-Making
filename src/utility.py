@@ -79,10 +79,20 @@ def train(method, env, timesteps, log_dir, verbose, continual, force_update):
             callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir, best_mean_reward=best_mean_reward)
             model = DQN.load(log_dir+"/best_model.zip", env=env)
             # model.set_env(env)
-            model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False)
+            model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False, tb_log_name=log_dir)
         else:
             callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
-            model = DQN("MlpPolicy", env, verbose=verbose)
+            model = DQN("MlpPolicy", 
+                        env=env, 
+                        learning_rate=5e-4,
+                        batch_size=128,
+                        buffer_size=50000,
+                        learning_starts=0,
+                        target_update_interval=250,
+                        policy_kwargs={"net_arch" : [256, 256]},
+                        verbose=1,
+                        )
+
             model.learn(total_timesteps=timesteps, callback=callback)
     elif method == 'A2C':
         log_dir += method
@@ -99,7 +109,7 @@ def train(method, env, timesteps, log_dir, verbose, continual, force_update):
             model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False)
         else:
             callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
-            model = A2C("MlpPolicy", env, verbose=verbose)
+            model = A2C("MlpPolicy", env, policy_kwargs = dict(net_arch = [dict(pi=[256,256], vf=[256,256])]), verbose = verbose)
             model.learn(total_timesteps=timesteps, callback=callback)
     elif method == 'PPO':
         log_dir += method
@@ -128,7 +138,7 @@ def train(method, env, timesteps, log_dir, verbose, continual, force_update):
             else:
                 best_mean_reward = np.load(log_dir + "/best_model/best_mean_reward.npy")  # Load the best mean reward from the saved model
             callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir, best_mean_reward=best_mean_reward)
-            model = RecurrentPPO.load(log_dir+"/best_model.zip", env=env)
+            model = RecurrentPPO.load(log_dir+"/best_model.zip", env=env, tensorboard_log=log_dir)
             # model.set_env(env)
             model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False)
         else:

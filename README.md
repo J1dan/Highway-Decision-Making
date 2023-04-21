@@ -5,7 +5,7 @@ We implement a highway environment to train the ego vehicle to conduct decision-
 
 *DecisionMakingEnv.py*: The gym environment in which decision trees are deployed on all vehicles. Observation space, action space and the rewards are all defined here.
 
-*train_viz.py*: A file that is to be launched in the terminal for either training or visualizing trained model. Detailed usage is illustrated in the next section.
+*train_viz.py*: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A file that is to be launched in the terminal for either training or visualizing trained model. Detailed usage is illustrated in the next section.
 
 *train.py*:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; This script is used to train and visualize the model. You can choose different RL algorithms as well as whether to conduct continual learning here.
 
@@ -40,3 +40,5 @@ To visualize our trained model, simply run
     src/train_viz.py --viz true --method PPO
 ```
 You can put different models and select the according method here. Options: A2C, DQN, PPO, RecurrentPPO
+
+## Demonstration

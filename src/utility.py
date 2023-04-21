@@ -1,19 +1,11 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 
 from sb3_contrib import RecurrentPPO
 from stable_baselines3 import DQN, A2C, PPO
-from stable_baselines3.common import results_plotter
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.results_plotter import load_results, ts2xy, plot_results
-from stable_baselines3.common.noise import NormalActionNoise
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.vec_env import DummyVecEnv
-
-
-from DecisionMakingEnv import HighwayEnv
-
 
 class SaveOnBestTrainingRewardCallback(BaseCallback):
     """

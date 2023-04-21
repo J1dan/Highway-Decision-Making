@@ -17,15 +17,48 @@ We implement a highway environment to train the ego vehicle to conduct decision-
 1. Clone the repository.
 
 2. Install required libraries through pip or conda. We recommend using conda (this is tested to work while using pip is not validated) as in the requirement.txt, there are redundant libraries.
-```terminal
-    pip install -r requirements.txt
-```
-or
+
 ```terminal
     conda env create -f environment.yml
     conda activate dm
 ```
+or
+```terminal
+    pip install -r requirements.txt
+```
 
+# FOR EXAMINERS:
+To visualize our trained model, simply run 
+```terminal
+    conda activate dm
+```
+```terminal
+    python src/train_viz.py --viz true --method DQN 
+``` 
+for aggresive model that would overtake obstacles
+```terminal
+    python src/train_viz.py --viz true --method PPO 
+``` 
+for conservative model that would remain at its original lane
+
+###################################################################### Thank you!
+
+3. To visualize our trained model, put the models in the /log directory.
+```terminal
+    python src/train_viz.py --viz true --method PPO
+```
+You can put different models and select the according method here. Options: A2C, DQN, PPO, RecurrentPPO
+
+## Demonstration
+<img src="Examples/vkeeping.gif" width="400"/>
+
+<img src="Examples/overtake.gif" width="400"/>
+
+<font color='blue'>The blue car is the ego vehicle</font>
+
+<font color='green'>The green cars are the observed vehicles by our ego behicle</font>
+
+<font color='red'>The red cars are obstacles.</font>
 # FOR EXAMINERS:
 To visualize our trained model, simply run 
 ```terminal

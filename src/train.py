@@ -11,8 +11,8 @@ from utility import viz
 log_dir = "log/"
 env = HighwayEnv()
 
-method = 'PPO' # 'DQN', 'A2C', 'PPO', 'RecurrentPPO'
+method = 'RecurrentPPO' # 'DQN', 'A2C', 'PPO', 'RecurrentPPO'
 CONTINUE = False # Continue learning
-model = train(method, env, 5e5, log_dir, verbose=0, continual=CONTINUE, force_update=1) 
-model = PPO.load(log_dir+"/PPO/best_model.zip", env=env)
+model = train(method, env, 3e5, log_dir, verbose=0, continual=CONTINUE, force_update=1) 
+# model = PPO.load(log_dir+"/PPO/best_model.zip", env=env)
 viz(model, env, method)

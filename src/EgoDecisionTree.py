@@ -45,19 +45,14 @@ class Vehicle:
                  self.CHANGELANE = 0
 
         elif action == 'accelerate' or action == 3:
-            self.acceleration = 5
+            self.acceleration = 2
 
         elif action == 'decelerate' or action == 4:
             self.acceleration = -5
 
         noise = np.random.normal(0, 0.1)
         self.acceleration += noise
-
-        if self.acceleration > 8:
-            self.acceleration = 8
-
-        if self.acceleration < -10:
-            self.acceleration = -10
+        self.acceleration = np.clip(self.acceleration, -5, 2)
 
         self.speed += self.acceleration * self.t
 
@@ -99,6 +94,7 @@ class Vehicle:
 
         if self.acceleration < -10:
             self.acceleration = -10
+
         self.speed += self.acceleration * self.t
         self.position += self.speed * self.t - 0.5 * self.acceleration * self.t * self.t  # vt*t-0.5*a*t**2
 
@@ -163,6 +159,7 @@ class HighwayEnv(gym.Env):
                                     dtype=np.float32)
        
         #-----------Metric----------------
+        self.dist_to_aheadObs = 0
         self.collision_time = 0
         self.outOfBoundary_time = 0
         self.lane_change_time = 0
@@ -289,7 +286,6 @@ class HighwayEnv(gym.Env):
 
                     if len(dangerObs) > 0:
                         obs_ahead = min(dangerObs, key=lambda obs:obs.position)
-
                         if obs_ahead.speed - 3 < obstacle.speed:
                             distance = obs_ahead.position - obstacle.position
                             deceleration = -(obstacle.speed - obs_ahead.speed)**2/(2*(distance))
@@ -440,7 +436,7 @@ class HighwayEnv(gym.Env):
    
     def _get_observation(self):
         # Get the state of the ego car and obstacles
-        observation = [self.ego.speed/self.max_speed, (self.ego.acceleration+8)/10, self.ego.lane/3]
+        observation = [self.ego.speed/self.max_speed, (self.ego.acceleration+5)/2, (self.ego.lane+1)/4]
         if len(self.nearest_obstacles_ahead) == 0 and len(self.nearest_obstacles_behind) == 0:
             observation.extend([200, 0.5, 0, -200, 0.5, 0])
         elif len(self.nearest_obstacles_ahead) == 0:

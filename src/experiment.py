@@ -17,7 +17,7 @@ num_scenario       = 0
 
 log_dir = "log/"
 
-method = 'decisionTree' # 'DQN', 'A2C', 'PPO', 'RecurrentPPO', 'decisionTree'
+method = 'PPO' # 'DQN', 'A2C', 'PPO', 'RecurrentPPO', 'decisionTree'
 
 w_v  = 0.001
 w_a  = 0.001

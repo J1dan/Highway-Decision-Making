@@ -67,6 +67,10 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
 
 
 def train(method, env, timesteps, log_dir, verbose, continual, force_update):
+    policy_kwargs_DQN = {"net_arch" : [128, 256, 256, 128]}
+    policy_kwargs_PPO = {"net_arch" : [128, 256, 256, 128]}
+    policy_kwargs_A2C = {"net_arch" : [128, 256, 256, 128]}
+# dict(net_arch=[64, 128, dict(pi=[256, 128], vf=[64, 32])])
     if method == 'DQN':
         log_dir += method
         env = Monitor(env, log_dir)
@@ -82,7 +86,13 @@ def train(method, env, timesteps, log_dir, verbose, continual, force_update):
             model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False, tb_log_name=log_dir)
         else:
             callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
-            model = DQN("MlpPolicy", env, verbose=verbose)
+            model = DQN("MlpPolicy", env, batch_size=2048, 
+                        buffer_size=50000, 
+                        learning_rate=0.0005,
+                        target_update_interval=250, 
+                        policy_kwargs=policy_kwargs_DQN, 
+                        verbose=verbose, 
+                        tensorboard_log=log_dir)
             model.learn(total_timesteps=timesteps, callback=callback)
     elif method == 'A2C':
         log_dir += method
@@ -99,7 +109,11 @@ def train(method, env, timesteps, log_dir, verbose, continual, force_update):
             model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False)
         else:
             callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
-            model = A2C("MlpPolicy", env, verbose=verbose)
+            model = A2C("MlpPolicy", env,
+                        learning_rate=0.0005,
+                        policy_kwargs=policy_kwargs_A2C, 
+                        verbose=verbose, 
+                        tensorboard_log=log_dir)
             model.learn(total_timesteps=timesteps, callback=callback)
     elif method == 'PPO':
         log_dir += method
@@ -116,8 +130,11 @@ def train(method, env, timesteps, log_dir, verbose, continual, force_update):
             model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False)
         else:
             callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
-            policy_kwargs = dict(net_arch=[dict(pi=[128, 128], vf=[128, 128])])
-            model = PPO("MlpPolicy", env, policy_kwargs=policy_kwargs, verbose=0)
+            model = PPO("MlpPolicy", env, batch_size=2048, 
+                        learning_rate=0.0005,
+                        policy_kwargs=policy_kwargs_PPO, 
+                        verbose=0, 
+                        tensorboard_log=log_dir)
             model.learn(total_timesteps=timesteps, callback=callback)
     elif method == 'RecurrentPPO':
         log_dir += method
@@ -134,7 +151,10 @@ def train(method, env, timesteps, log_dir, verbose, continual, force_update):
             model.learn(total_timesteps = timesteps, callback=callback, reset_num_timesteps=False)
         else:
             callback = SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_dir)
-            model = RecurrentPPO("MlpLstmPolicy", env, verbose=0)
+            model = RecurrentPPO("MlpLstmPolicy", env, batch_size=2048, 
+                        learning_rate=0.0005,
+                        verbose=0,
+                        tensorboard_log=log_dir)
             model.learn(total_timesteps=timesteps, callback=callback)
     else:
         AssertionError("Invalid method")

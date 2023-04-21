@@ -62,7 +62,6 @@ def train(method, env, timesteps, log_dir, verbose, continual, force_update):
     policy_kwargs_DQN = {"net_arch" : [128, 256, 256, 128]}
     policy_kwargs_PPO = {"net_arch" : [128, 256, 256, 128]}
     policy_kwargs_A2C = {"net_arch" : [128, 256, 256, 128]}
-# dict(net_arch=[64, 128, dict(pi=[256, 128], vf=[64, 32])])
     if method == 'DQN':
         log_dir += method
         env = Monitor(env, log_dir)

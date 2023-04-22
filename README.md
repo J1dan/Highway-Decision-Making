@@ -16,7 +16,7 @@ We implement a highway environment to train the ego vehicle to conduct decision-
 ## Usage
 1. Clone the repository.
 
-2. Install required libraries through pip or conda. We recommend using conda as in the requirement.txt, there are redundant libraries.
+2. Install required libraries through pip or conda. We recommend using conda (this is tested to work while using pip is not validated) as in the requirement.txt, there are redundant libraries.
 ```terminal
     pip install -r requirements.txt
 ```

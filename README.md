@@ -54,4 +54,4 @@ You can put different models and select the according method here. Options: A2C,
 
 <font color='green'>The green cars are the observed vehicles by our ego behicle</font>
 
-<font color='red'>the red cars are obstacles.</font>
+<font color='red'>The red cars are obstacles.</font>

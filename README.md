@@ -59,32 +59,3 @@ You can put different models and select the according method here. Options: A2C,
 <font color='green'>The green cars are the observed vehicles by our ego behicle</font>
 
 <font color='red'>The red cars are obstacles.</font>
-# FOR EXAMINERS:
-To visualize our trained model, simply run 
-```terminal
-    train_viz.py --viz true --method DQN 
-``` 
-for aggresive model that would overtake obstacles
-```terminal
-    train_viz.py --viz true --method PPO 
-``` 
-for conservative model that would remain at its original lane
-
-###################################################################### Thank you!
-
-3. To visualize our trained model, put the models in the /log directory.
-```terminal
-    src/train_viz.py --viz true --method PPO
-```
-You can put different models and select the according method here. Options: A2C, DQN, PPO, RecurrentPPO
-
-## Demonstration
-<img src="Examples/vkeeping.gif" width="400"/>
-
-<img src="Examples/overtake.gif" width="400"/>
-
-<font color='blue'>The blue car is the ego vehicle</font>
-
-<font color='green'>The green cars are the observed vehicles by our ego behicle</font>
-
-<font color='red'>The red cars are obstacles.</font>
